@@ -3,18 +3,19 @@
 . /opt/mylogin/stocks
 
 
+blk="---------------------------------------------------------------------------------------"
 tmp=$(mktemp)
 while test 1
 do 
 	{
 	echo -n $'\e[H\e[J'
-	date
-	echo "-----------------------------------------------"
+	echo $'                        \e[1m'"$(date)"$'\e[0m'
+	echo "${blk}"
 	./day_movement_by_ticker
 	echo ""
-	echo "-----------------------------------------------"
-	echo ""
+	echo "${blk}"
 	./day_movement_by_account
+	echo -n $'\e[H'
 	} > ${tmp}
 
 	cat ${tmp}
