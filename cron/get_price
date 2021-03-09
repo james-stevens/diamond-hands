@@ -4,6 +4,7 @@ import requests
 import json
 import time
 import sys
+import os
 import collections
 import argparse
 import subprocess
@@ -16,12 +17,6 @@ parser = argparse.ArgumentParser(description='Get price from yahoo web')
 parser.add_argument("-t", '--ticker', help='Ticker to pull in')
 parser.add_argument("-p", '--post-call', help='Post processing script')
 args = parser.parse_args()
-
-MYSQL_LOGIN = {
-    "MYSQL_DATABASE": "stocks",
-    "MYSQL_PASSWORD": "jipki7Y32iX5c",
-    "MYSQL_USERNAME": "reg"
-}
 
 
 def convert_string(data):
@@ -38,16 +33,31 @@ my_conv[FIELD_TYPE.VAR_STRING] = convert_string
 
 
 def mysql_connect():
+    sock="/tmp/mysql.sock"
+    host = None
+    port = None
+    if "MYSQL_CONNECT" in os.environ:
+        conn = os.environ["MYSQL_CONNECT"]
+        if conn.find("/") >= 0:
+            sock = conn
+        else:
+            host = conn
+            port = 3306
+            if conn.find(":") >= 0:
+                svr = conn.split(":")
+                host = svr[0]
+                port = int(svr[1])
+
+
     return _mysql.connect(
-        user=MYSQL_LOGIN["MYSQL_USERNAME"],
-        passwd=MYSQL_LOGIN["MYSQL_PASSWORD"],
-        host="192.168.1.240",
-        port=3306,
-        db=MYSQL_LOGIN["MYSQL_DATABASE"],
+        user=os.environ["MYSQL_USERNAME"],
+        passwd=os.environ["MYSQL_PASSWORD"],
+        unix_socket=sock,
+        host = host, port = port,
+        db=os.environ["MYSQL_DATABASE"],
         conv=my_conv,
-        charset='utf8mb4',
-        init_command='SET NAMES UTF8',
-    )
+        charset='utf8mb4', init_command='SET NAMES UTF8',
+        )
 
 
 def get_prices(ticker):

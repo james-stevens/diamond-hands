@@ -1,9 +1,7 @@
 #! /bin/bash
 
-export MYSQL_CONNECT=192.168.1.240:3306
-export MYSQL_DATABASE=stocks
-export MYSQL_PASSWORD=jipki7Y32iX5c
-export MYSQL_USERNAME=reg
+. /opt/mylogin/stocks
+
 
 tmp=$(mktemp)
 while test 1

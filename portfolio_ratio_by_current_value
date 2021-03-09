@@ -1,5 +1,6 @@
 #! /bin/sh
 
+. /opt/mylogin/stocks
 
 sqlsh -s'|' -d stocks 'select "Total",@full := sum(current_value_gbp) from trades join spot_values using(spot_value_id)' \
 	'select 

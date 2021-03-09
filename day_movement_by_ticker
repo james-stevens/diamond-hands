@@ -1,5 +1,7 @@
 #! /bin/sh
 
+. /opt/mylogin/stocks
+
 echo ""
 
 sqlsh -s'|' -d stocks 'select 
