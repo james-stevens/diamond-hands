@@ -1,0 +1,21 @@
+#! /bin/sh
+
+
+sqlsh -s'|' -d stocks 'select "Total",@full := sum(current_value_gbp) from trades join spot_values using(spot_value_id)' \
+	'select 
+		ticker,(sum(current_value_gbp)/@full)*100
+		from trades
+		join spot_values using(spot_value_id)
+		group by ticker order by 2' | \
+		awk -F'|' 'BEGIN {
+			x=0.0;
+			print ""
+			}
+			{
+			if ($1 != "Total") {
+				x=x+$2;
+				printf "%-12s%8.2f\n",$1,$2
+				}
+			}
+			END { printf "\n%-12s%8.2f\n\n","ALL",x }'
+

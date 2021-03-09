@@ -1,0 +1,15 @@
+#! /bin/bash
+
+echo "Pre-Prices"
+
+sqlsh 'insert into tickers(ticker)
+	select distinct ticker
+	from trades
+	where ticker not in (select ticker from tickers)' \
+ \
+	'insert into tickers(ticker) 
+	select distinct concat("GBP",currency,"=X")
+	from trades
+	where currency != "GBP"
+	and concat("GBP",currency,"=X") not in
+		(select ticker from tickers)'

@@ -1,0 +1,107 @@
+{
+   "sourceInterval": 15,
+   "quoteSourceName": "Delayed Quote",
+   "regularMarketOpen": {
+      "raw": 600.55,
+      "fmt": "600.55"
+   },
+   "exchange": "NMS",
+   "regularMarketTime": {
+      "raw": 1615237202,
+      "fmt": "4:00PM EST"
+   },
+   "fiftyTwoWeekRange": {
+      "raw": "70.102 - 900.4",
+      "fmt": "70.10 - 900.40"
+   },
+   "sharesOutstanding": {
+      "raw": 959854016,
+      "fmt": "959.854M",
+      "longFmt": "959,854,016"
+   },
+   "regularMarketDayHigh": {
+      "raw": 620.0906,
+      "fmt": "620.09"
+   },
+   "shortName": "Tesla, Inc.",
+   "longName": "Tesla, Inc.",
+   "exchangeTimezoneName": "America/New_York",
+   "regularMarketChange": {
+      "raw": -34.950012,
+      "fmt": "-34.95"
+   },
+   "regularMarketPreviousClose": {
+      "raw": 597.95,
+      "fmt": "597.95"
+   },
+   "fiftyTwoWeekHighChange": {
+      "raw": -337.40002,
+      "fmt": "-337.40"
+   },
+   "exchangeTimezoneShortName": "EST",
+   "fiftyTwoWeekLowChange": {
+      "raw": 492.898,
+      "fmt": "492.90"
+   },
+   "exchangeDataDelayedBy": 0,
+   "regularMarketDayLow": {
+      "raw": 558.8,
+      "fmt": "558.80"
+   },
+   "priceHint": 2,
+   "currency": "USD",
+   "regularMarketPrice": {
+      "raw": 563,
+      "fmt": "563.00"
+   },
+   "regularMarketVolume": {
+      "raw": 51786808,
+      "fmt": "51.787M",
+      "longFmt": "51,786,808"
+   },
+   "isLoading": false,
+   "triggerable": true,
+   "gmtOffSetMilliseconds": -18000000,
+   "firstTradeDateMilliseconds": 1277818200000,
+   "region": "US",
+   "marketState": "PREPRE",
+   "marketCap": {
+      "raw": 540397797376,
+      "fmt": "540.398B",
+      "longFmt": "540,397,797,376"
+   },
+   "quoteType": "EQUITY",
+   "invalid": false,
+   "symbol": "TSLA",
+   "language": "en-US",
+   "fiftyTwoWeekLowChangePercent": {
+      "raw": 7.031155,
+      "fmt": "703.12%"
+   },
+   "regularMarketDayRange": {
+      "raw": "558.8 - 620.0906",
+      "fmt": "558.80 - 620.09"
+   },
+   "messageBoardId": "finmb_27444752",
+   "fiftyTwoWeekHigh": {
+      "raw": 900.4,
+      "fmt": "900.40"
+   },
+   "fiftyTwoWeekHighChangePercent": {
+      "raw": -0.37472236,
+      "fmt": "-37.47%"
+   },
+   "uuid": "ec367bc4-f92c-397c-ac81-bf7b43cffaf7",
+   "market": "us_market",
+   "fiftyTwoWeekLow": {
+      "raw": 70.102,
+      "fmt": "70.10"
+   },
+   "regularMarketChangePercent": {
+      "raw": -5.844972,
+      "fmt": "-5.84%"
+   },
+   "fullExchangeName": "NasdaqGS",
+   "tradeable": false
+}
+(563, '2021-03-08 21:00:02')

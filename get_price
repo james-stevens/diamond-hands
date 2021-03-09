@@ -1,0 +1,134 @@
+#! /usr/bin/python3
+
+import requests
+import json
+import time
+import sys
+import collections
+import argparse
+import subprocess
+from datetime import datetime
+from MySQLdb import _mysql
+from MySQLdb.constants import FIELD_TYPE
+import MySQLdb.converters
+
+parser = argparse.ArgumentParser(description='Get price from yahoo web')
+parser.add_argument("-t", '--ticker', help='Ticker to pull in')
+parser.add_argument("-p", '--post-call', help='Post processing script')
+args = parser.parse_args()
+
+MYSQL_LOGIN = {
+    "MYSQL_DATABASE": "stocks",
+    "MYSQL_PASSWORD": "jipki7Y32iX5c",
+    "MYSQL_USERNAME": "reg"
+}
+
+
+def convert_string(data):
+    if isinstance(data, bytes):
+        return data.decode("utf8")
+    return data
+
+
+my_conv = MySQLdb.converters.conversions.copy()
+my_conv[FIELD_TYPE.VARCHAR] = convert_string
+my_conv[FIELD_TYPE.CHAR] = convert_string
+my_conv[FIELD_TYPE.STRING] = convert_string
+my_conv[FIELD_TYPE.VAR_STRING] = convert_string
+
+
+def mysql_connect():
+    return _mysql.connect(
+        user=MYSQL_LOGIN["MYSQL_USERNAME"],
+        passwd=MYSQL_LOGIN["MYSQL_PASSWORD"],
+        host="192.168.1.240",
+        port=3306,
+        db=MYSQL_LOGIN["MYSQL_DATABASE"],
+        conv=my_conv,
+        charset='utf8mb4',
+        init_command='SET NAMES UTF8',
+    )
+
+
+def get_prices(ticker):
+    url = "https://finance.yahoo.com/quote/" + ticker + "/"
+    response = requests.request("GET", url)
+
+    js = None
+    try:
+        for line in response.text.split("\n"):
+            if line[:13] == "root.App.main":
+                js = json.loads(line[line.find("{"):-1])
+
+        if js is None:
+            return None
+
+        return js["context"]["dispatcher"]["stores"]["StreamDataStore"][
+            "quoteData"]
+    except Exception as e:
+        return None
+
+
+def get_val_dtm(price):
+    val = price["regularMarketPrice"]["raw"]
+    if price["currency"] == "GBp":
+        val = val / 100
+        price["currency"] = "GBP"
+
+    dtm = datetime.utcfromtimestamp(
+        price["regularMarketTime"]["raw"]).strftime('%Y-%m-%d %H:%M:%S')
+    return val, dtm
+
+
+if args.ticker is not None:
+    js = get_prices(args.ticker)
+    if args.ticker in js:
+        print(json.dumps(js[args.ticker], indent=3))
+        print(get_val_dtm(js[args.ticker]))
+    sys.exit(0)
+
+cnx = mysql_connect()
+
+cnx.query("select ticker from tickers")
+res = cnx.store_result()
+ret = res.fetch_row(maxrows=0, how=1)
+tickers = {t["ticker"]: None for t in ret}
+
+batch = datetime.utcfromtimestamp(int(
+    time.time())).strftime('%Y-%m-%d %H:%M:%S')
+
+for ticker in [t for t in tickers]:
+    if tickers[ticker] is not None:
+        continue
+
+    prices = get_prices(ticker)
+    if prices is None:
+        prices = get_prices(ticker)
+
+    for price in prices:
+        if price not in tickers or tickers[price] is not None:
+            continue
+
+        if ticker != price and price == "BTC-USD":
+            continue
+
+        this_price = prices[price]
+        tickers[price] = this_price
+
+        val, dtm = get_val_dtm(this_price)
+        print(price, "->", dtm, "->", val, "->", this_price["currency"],this_price["marketState"])
+        sys.stdout.flush()
+
+        sql = "insert into spot_prices(batch,ticker,when_dt,price,currency,market_state)"
+        sql = sql + "values(\"{batch}\",\"{ticker}\",\"{datetime}\",{price},\"{cur}\",\"{mktopen}\")".format(
+            batch=batch,
+            ticker=price,
+            datetime=dtm,
+            price=val,
+            cur=this_price["currency"],
+            mktopen=this_price["marketState"])
+        cnx.query(sql)
+
+if args.post_call:
+    sys.stdout.flush()
+    subprocess.call(["/bin/bash", "-c", args.post_call])
