@@ -2,7 +2,7 @@
 
 . /opt/mylogin/stocks
 
-base="/root/github/diamond_hands/cron"
+base="/root/github/diamond-hands/cron"
 
 {
 if test "$1" = "EOD"

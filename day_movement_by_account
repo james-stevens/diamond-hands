@@ -8,6 +8,8 @@ sqlsh -s'|' -d stocks 'select
 		account_held,
 		format(sum(e.current_value_gbp),2) "Start",
 		format(sum(s.current_value_gbp),2) "Now",
+		format(sum(e.current_price),2) "SOD-Price",
+		format(sum(s.current_price),2) "Price",
 		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
@@ -22,6 +24,8 @@ sqlsh -s'|' -d stocks 'select
 		"ALL",
 		format(sum(e.current_value_gbp),2) "Start",
 		format(sum(s.current_value_gbp),2) "Now",
+		format(sum(e.current_price),2) "SOD-Price",
+		format(sum(s.current_price),2) "Price",
 		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
@@ -32,8 +36,8 @@ sqlsh -s'|' -d stocks 'select
 	awk -F'|' '{
 		if ($1=="=") print ""
 		else {
-			if (substr($5,1,1)=="-") col="40;31;1"; else col="40;32;1";
-			printf "%-15s%15s%15s%c[%sm%15s%10s%%%c[0m\n",$1,$2,$3,27,col,$4,$5,27
+			if (substr($NF,1,1)=="-") col="40;31;1"; else col="40;32;1";
+			printf "%-13s%13s%13s%13s%c[%sm%12s |%12s%10s%%%c[0m\n",$1,$2,$3,$4,27,col,$5,$6,$7,27
 			}
 		}'
 
