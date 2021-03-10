@@ -9,8 +9,8 @@ sqlsh -s'|' -d stocks 'select
 		format(sum(e.current_value_gbp),2) "Start",
 		format(sum(s.current_value_gbp),2) "Now",
 		format(sum(t.total_cost_gbp),2) "Total Start",
-		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Day Change",
 		format(sum(s.current_value_gbp-t.total_cost_gbp),2) "Total Change",
+		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Day Change",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
 	join spot_values e on(t.eod_spot_value_id = e.spot_value_id)
@@ -33,11 +33,15 @@ sqlsh -s'|' -d stocks 'select
 	join spot_values s on(t.spot_value_id = s.spot_value_id)' | \
 	\
 	\
-	awk -F'|' '{
+	awk -F'|' 'BEGIN {
+		printf "%c[1m%-13s%11s%13s%13s%12s |%12s%11s%c[0m\n",
+			27,"Account","StrtOfDay","Now","Initial","Total +/-","Day +/-","Day %age",27
+		}
+		{
 		if ($1=="=") print ""
 		else {
 			if (substr($NF,1,1)=="-") col="40;31;1"; else col="40;32;1";
-			printf "%-13s%11s%13s%13s)%c[%sm%11s |%12s%10s%%%c[0m\n",$1,$2,$3,"(" _ $4,27,col,$5,$6,$7,27
+			printf "%-13s%11s%13s%13s)%11s |%c[%sm%12s%10s%%%c[0m\n",$1,$2,$3,"(" _ $4,$5,27,col,$6,$7,27
 			}
 		}'
 
