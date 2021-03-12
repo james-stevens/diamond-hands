@@ -1,0 +1,14 @@
+CREATE TABLE `trades` (
+  `trade_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `ticker` char(20) DEFAULT NULL,
+  `when_dt` datetime DEFAULT NULL,
+  `quantity` decimal(10,6) DEFAULT NULL,
+  `currency` char(5) DEFAULT NULL,
+  `price` decimal(10,5) DEFAULT NULL,
+  `exchange_rate` decimal(10,5) DEFAULT NULL,
+  `total_cost_gbp` decimal(10,5) DEFAULT NULL,
+  `account_held` char(25) DEFAULT NULL,
+  `spot_value_id` int(10) unsigned DEFAULT NULL,
+  `eod_spot_value_id` int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (`trade_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=latin1

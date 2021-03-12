@@ -1,0 +1,14 @@
+CREATE TABLE `spot_values` (
+  `trade_id` int(10) unsigned NOT NULL,
+  `batch` datetime NOT NULL,
+  `current_price` decimal(10,5) DEFAULT NULL,
+  `current_exchange_rate` decimal(10,5) DEFAULT NULL,
+  `current_value_gbp` decimal(10,5) DEFAULT NULL,
+  `spot_value_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `spot_price_id` int(10) unsigned DEFAULT NULL,
+  `end_of_day` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`trade_id`,`batch`),
+  UNIQUE KEY `spot_value_id` (`spot_value_id`),
+  KEY `price_id` (`spot_price_id`),
+  KEY `by_batch` (`batch`)
+) ENGINE=InnoDB AUTO_INCREMENT=309556 DEFAULT CHARSET=latin1

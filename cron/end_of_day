@@ -10,14 +10,24 @@ sqlsh 'update spot_values v join (
 	set
 		v.end_of_day = 1
 		where v.end_of_day is NULL' \
- \
+\
 	'update spot_values set end_of_day = 0 where end_of_day is NULL and batch < date(now())' \
- \
+\
 	'update trades t join (
 		select v.* from spot_values v join (
 			select max(spot_value_id) "spot_value_id",trade_id
 			from spot_values where end_of_day
 			group by 2) mx using(spot_value_id)
 		) vv using(trade_id)
-	set t.eod_spot_value_id = vv.spot_value_id'
-
+	set t.eod_spot_value_id = vv.spot_value_id' \
+\
+	'delete from spot_values
+		where not end_of_day
+		and batch < date_sub(now(),interval 1 week)' \
+\
+	'delete from spot_rates
+		where batch < date_sub(now(),interval 1 week)' \
+\
+	'delete from spot_prices 
+		where spot_price_id not in (select spot_price_id from spot_values)
+		and spot_price_id not in (select spot_price_id from spot_rates)'

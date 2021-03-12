@@ -1,0 +1,4 @@
+CREATE TABLE `tickers` (
+  `ticker` char(20) NOT NULL,
+  PRIMARY KEY (`ticker`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1

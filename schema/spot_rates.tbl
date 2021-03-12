@@ -1,0 +1,10 @@
+CREATE TABLE `spot_rates` (
+  `batch` datetime NOT NULL,
+  `currency` char(5) NOT NULL,
+  `exchange_rate` decimal(10,5) DEFAULT NULL,
+  `spot_rate_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `spot_price_id` int(10) unsigned DEFAULT NULL,
+  PRIMARY KEY (`currency`,`batch`),
+  UNIQUE KEY `spot_rate_id` (`spot_rate_id`),
+  KEY `price_id` (`spot_price_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4581 DEFAULT CHARSET=latin1

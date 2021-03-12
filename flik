@@ -12,7 +12,6 @@ do
 	echo $'                        \e[1m'"$(date)"$'\e[0m'
 	echo "${blk}"
 	/root/github/diamond-hands/day_movement_by_ticker
-	echo ""
 	echo "${blk}"
 	/root/github/diamond-hands/day_movement_by_account
 	echo -n $'\e[H'

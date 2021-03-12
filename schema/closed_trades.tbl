@@ -1,0 +1,17 @@
+CREATE TABLE `closed_trades` (
+  `closed_trade_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `from_trade_id` int(10) unsigned NOT NULL,
+  `ticker` char(20) DEFAULT NULL,
+  `when_dt` datetime DEFAULT NULL,
+  `quantity` decimal(10,6) DEFAULT NULL,
+  `currency` char(5) DEFAULT NULL,
+  `price` decimal(10,5) DEFAULT NULL,
+  `exchange_rate` decimal(10,5) DEFAULT NULL,
+  `total_cost_gbp` decimal(10,5) DEFAULT NULL,
+  `account_held` char(25) DEFAULT NULL,
+  `sold_price` decimal(10,5) DEFAULT NULL,
+  `sold_rate` decimal(10,5) DEFAULT NULL,
+  `sold_gbp` decimal(10,5) DEFAULT NULL,
+  `sold_when_dt` datetime DEFAULT NULL,
+  PRIMARY KEY (`closed_trade_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=latin1

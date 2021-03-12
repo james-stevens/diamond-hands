@@ -1,0 +1,7 @@
+#! /bin/sh
+
+rm -f *.tbl
+sqlsh 'show tables' | while read table
+do
+	sqlsh "show create table ${table}" | awk -F'' '{ print $NF }' > ${table}.tbl
+done

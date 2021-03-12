@@ -1,0 +1,11 @@
+CREATE TABLE `spot_prices` (
+  `ticker` char(20) NOT NULL,
+  `when_dt` datetime DEFAULT NULL,
+  `price` decimal(10,5) DEFAULT NULL,
+  `currency` char(5) DEFAULT NULL,
+  `batch` datetime NOT NULL,
+  `spot_price_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `market_state` char(10) DEFAULT NULL,
+  PRIMARY KEY (`ticker`,`batch`),
+  UNIQUE KEY `spot_price_id` (`spot_price_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=23607 DEFAULT CHARSET=latin1
