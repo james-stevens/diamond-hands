@@ -2,15 +2,13 @@
 
 . /opt/mylogin/stocks
 
-echo ""
-
 sqlsh -s'|' -d stocks 'select 
 		ticker,
-		format(sum(e.current_value_gbp),2) "Start",
 		format(sum(s.current_value_gbp),2) "Now",
-		format(avg(e.current_price),2) "SOD-Price",
+		format(sum(s.current_value_gbp-t.total_cost_gbp),2) "Profit",
 		format(avg(s.current_price),2) "Price",
 		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
+		format(avg(s.current_price-e.current_price),2) "SOD-Price",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
 	join spot_values e on(t.eod_spot_value_id = e.spot_value_id)
@@ -22,10 +20,10 @@ sqlsh -s'|' -d stocks 'select
 	\
 	'select 
 		"All GBP",
-		format(sum(e.current_value_gbp),2) "Start",
 		format(sum(s.current_value_gbp),2) "Now",
-		concat("(",format(sum(t.total_cost_gbp),2),")") "total cost",
 		format(sum(s.current_value_gbp-t.total_cost_gbp),2) "Total Change",
+		concat("(",format(sum(t.total_cost_gbp),2),")") "total cost",
+		concat(format((sum(s.current_value_gbp-t.total_cost_gbp)/sum(t.total_cost_gbp))*100,2),"%") "total %age",
 		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
@@ -37,11 +35,11 @@ sqlsh -s'|' -d stocks 'select
 	\
 	'select 
 		ticker,
-		format(sum(e.current_value_gbp),2) "Start",
 		format(sum(s.current_value_gbp),2) "Now",
-		format(avg(e.current_price),2) "SOD-Price",
+		format(sum(s.current_value_gbp-t.total_cost_gbp),2) "Profit",
 		format(avg(s.current_price),2) "Price",
 		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
+		format(avg(s.current_price-e.current_price),2) "SOD-Price",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
 	join spot_values e on(t.eod_spot_value_id = e.spot_value_id)
@@ -53,21 +51,26 @@ sqlsh -s'|' -d stocks 'select
 	\
 	'select
 		"Rest",
-		format(sum(e.current_value_gbp),2) "Start",
 		format(sum(s.current_value_gbp),2) "Now",
-		concat("(",format(sum(t.total_cost_gbp),2),")") "total cost",
 		format(sum(s.current_value_gbp-t.total_cost_gbp),2) "Total Change",
+		concat("(",format(sum(t.total_cost_gbp),2),")") "total cost",
+		concat(format((sum(s.current_value_gbp-t.total_cost_gbp)/sum(t.total_cost_gbp))*100,2),"%") "total %age",
 		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
 	join spot_values e on(t.eod_spot_value_id = e.spot_value_id)
 	join spot_values s on(t.spot_value_id = s.spot_value_id)
 	where t.currency != "GBP"' \
-	| awk -F'|' '{ 
-		if ($1=="=") print ""
-		else {
-			if (substr($NF,1,1)=="-") col="40;31;1"; else col="40;32;1";
-			if ($(NF-1)=="0.00") col="0"
-			printf "%-13s%11s%13s%13s%c[%sm%12s |%12s%10s%%%c[0m\n",$1,$2,$3,$4,27,col,$5,$6,$7,27
+	| awk -F'|' 'BEGIN {
+			printf "%c[5;1m%-13s%11s%13s%13s%12s |%12s%11s%c[0m\n",
+				27,"Ticker","Total","All +/-","Price","Total Day","Day +/-","Day %age",27
 			}
-		}'
+			{ 
+			if ($1=="=") print ""
+			else {
+				if (substr($3,1,1)=="-") col3="40;31;1"; else col3="40;32;1";
+				if (substr($NF,1,1)=="-") col="40;31;1"; else col="40;32;1";
+				if ($(NF-1)=="0.00") col="0"
+				printf "%-13s%11s%c[%sm%13s%c[0m%13s%c[%sm%12s |%12s%10s%%%c[0m\n",$1,$2,27,col3,$3,27,$4,27,col,$5,$6,$7,27
+				}
+			}'

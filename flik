@@ -3,13 +3,13 @@
 . /opt/mylogin/stocks
 
 
-blk="---------------------------------------------------------------------------------------"
+blk=""
 tmp=$(mktemp)
 while test 1
 do 
 	{
 	echo -n $'\e[H\e[J'
-	echo $'                        \e[1m'"$(date)"$'\e[0m'
+	echo $'                        \e[1;4m'"$(date)"$'\e[0m'
 	echo "${blk}"
 	/root/github/diamond-hands/day_movement_by_ticker
 	echo "${blk}"
