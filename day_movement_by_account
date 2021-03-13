@@ -41,6 +41,7 @@ sqlsh -s'|' -d stocks 'select
 		if ($1=="=") print ""
 		else {
 			if (substr($NF,1,1)=="-") col="40;31;1"; else col="40;32;1";
+			if ($(NF-1)=="0.00") col="0"
 			printf "%-13s%11s%13s%13s)%11s |%c[%sm%12s%10s%%%c[0m\n",$1,$2,$3,"(" _ $4,$5,27,col,$6,$7,27
 			}
 		}'
