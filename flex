@@ -19,6 +19,5 @@ do
 
 	cat ${tmp}
 	rm -f ${tmp}
-	sleep 10
+	sleep 60
 done
-
