@@ -1,0 +1,48 @@
+#! /bin/sh
+
+sqlsh 'create view latest_values as
+	select v.* from spot_values v join (
+		select max(spot_value_id) "spot_value_id",trade_id
+		from spot_values group by 2) mx
+		using(spot_value_id)' \
+\
+\
+'create view latest_rates as 
+	select r.* from spot_rates r
+	join (
+		select max(spot_rate_id) "spot_rate_id",currency
+		from spot_rates
+		group by currency
+		) rr
+	using(spot_rate_id)' \
+\
+\
+'create view end_of_day_value as
+	select v.* from spot_values v join (
+		select max(spot_value_id) "spot_value_id",trade_id
+		from spot_values
+		where end_of_day
+		group by trade_id
+		) eod
+	using(spot_value_id)' \
+\
+\
+'create view end_of_week_value as
+	select v.* from spot_values v join (
+		select max(spot_value_id) "spot_value_id",trade_id
+		from spot_values
+		where end_of_day and WEEKDAY(batch) = 6
+		group by trade_id
+		) eod
+	using(spot_value_id)' \
+\
+\
+'create view current_value as
+	select * from trades join spot_values using(spot_value_id,trade_id)' \
+\
+\
+'create view end_of_day as
+	select trade_id,date(batch),max(spot_value_id) "spot_value_id"
+	from spot_values
+	where batch < date(now())
+	group by 1,2'

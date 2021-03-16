@@ -9,6 +9,7 @@ sqlsh 'insert into spot_rates
 	where p.ticker like "GBP%=X"
 	and r.currency is NULL' \
  \
+ \
 	'insert into spot_rates
 	select distinct batch,"GBP",1,NULL,NULL
 	from spot_prices
@@ -16,18 +17,13 @@ sqlsh 'insert into spot_rates
 		select batch from spot_rates where currency="GBP"
 		)' \
  \
-	'insert into spot_values(trade_id,batch,current_price,current_exchange_rate,current_value_gbp,spot_price_id,spot_value_id)
-	select t.trade_id,s.batch,s.price,r.exchange_rate,(s.price*t.quantity)/r.exchange_rate,s.spot_price_id,NULL
-	from trades t
-	join spot_prices s using(ticker)
-	join spot_rates r on(r.batch=s.batch and r.currency = t.currency)
-	where s.spot_price_id not in (select spot_price_id from spot_values)' \
  \
-	'update trades t
-	join (
-		select v.* from spot_values v join (
-			select max(spot_value_id) "spot_value_id",trade_id
-			from spot_values group by 2) mx
-			using(spot_value_id)
-		) vv using(trade_id)
-	set t.spot_value_id = vv.spot_value_id'
+	'insert into spot_values(trade_id,batch,current_price,current_exchange_rate,current_value_gbp,spot_price_id,spot_value_id)
+		select t.trade_id,s.batch,s.price,r.exchange_rate,(s.price*t.quantity)/r.exchange_rate,s.spot_price_id,NULL
+		from trades t
+		join spot_prices s on(t.ticker=s.ticker and t.currency=s.currency)
+		join latest_rates r on(t.currency=r.currency)
+		where s.spot_price_id not in (select spot_price_id from spot_values)' \
+ \
+ \
+	'update trades t join latest_values vv using(trade_id) set t.spot_value_id = vv.spot_value_id'

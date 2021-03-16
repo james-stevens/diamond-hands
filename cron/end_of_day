@@ -2,24 +2,15 @@
 
 echo "EndOfDay"
 
-sqlsh 'update spot_values v join (
-		select trade_id,date(batch),max(spot_value_id) "spot_value_id"
-		from spot_values
-		where batch < date(now()) group by 1,2
-	) sv using(spot_value_id)
+sqlsh 'update spot_values v join end_of_day eod using(spot_value_id)
 	set
 		v.end_of_day = 1
 		where v.end_of_day is NULL' \
 \
 	'update spot_values set end_of_day = 0 where end_of_day is NULL and batch < date(now())' \
 \
-	'update trades t join (
-		select v.* from spot_values v join (
-			select max(spot_value_id) "spot_value_id",trade_id
-			from spot_values where end_of_day
-			group by 2) mx using(spot_value_id)
-		) vv using(trade_id)
-	set t.eod_spot_value_id = vv.spot_value_id' \
+	'update trades t join end_of_day_value v using(trade_id) set t.eod_spot_value_id = v.spot_value_id' \
+	'update trades t join end_of_week_value v using(trade_id) set t.eow_spot_value_id = v.spot_value_id' \
 \
 	'delete from spot_values
 		where not end_of_day
