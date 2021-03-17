@@ -22,7 +22,7 @@ sqlsh 'insert into spot_rates
 		select t.trade_id,s.batch,s.price,r.exchange_rate,(s.price*t.quantity)/r.exchange_rate,s.spot_price_id,NULL
 		from trades t
 		join spot_prices s on(t.ticker=s.ticker and t.currency=s.currency)
-		join latest_rates r on(t.currency=r.currency)
+		join spot_rates r on(s.currency=r.currency and s.batch = r.batch)
 		where s.spot_price_id not in (select spot_price_id from spot_values)' \
  \
  \

@@ -17,7 +17,8 @@ sqlsh 'update spot_values v join end_of_day eod using(spot_value_id)
 		and batch < date_sub(now(),interval 1 week)' \
 \
 	'delete from spot_rates
-		where batch < date_sub(now(),interval 1 week)' \
+		where batch < date_sub(now(),interval 1 week) 
+		and batch not in (select batch from spot_values)' \
 \
 	'delete from spot_prices 
 		where spot_price_id not in (select spot_price_id from spot_values)
