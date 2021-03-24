@@ -3,9 +3,7 @@
 echo "EndOfDay"
 
 sqlsh 'update spot_values v join end_of_day eod using(spot_value_id)
-	set
-		v.end_of_day = 1
-		where v.end_of_day is NULL' \
+	set v.end_of_day = 1 where v.end_of_day is NULL' \
 \
 	'update spot_values set end_of_day = 0 where end_of_day is NULL and batch < date(now())' \
 \

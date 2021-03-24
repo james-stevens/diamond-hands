@@ -19,12 +19,11 @@ sqlsh 'create view latest_values as
 \
 'create view end_of_day_value as
 	select v.* from spot_values v join (
-		select max(spot_value_id) "spot_value_id",trade_id
+		select max(batch) "batch",trade_id,date(batch)
 		from spot_values
-		where end_of_day
-		group by trade_id
-		) eod
-	using(spot_value_id)' \
+		where batch < date(now()) group by 2,3
+	) vv on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
+
 \
 \
 'create view end_of_week_value as
@@ -42,7 +41,10 @@ sqlsh 'create view latest_values as
 \
 \
 'create view end_of_day as
-	select trade_id,date(batch),max(spot_value_id) "spot_value_id"
-	from spot_values
-	where batch < date(now())
-	group by 1,2'
+	select v.trade_id,date(v.batch),v.spot_value_id
+	from spot_values v join (
+		select max(batch) "batch",trade_id,date(batch)
+		from spot_values
+		where batch < date(now()) group by 2,3
+		) vv 
+	on (v.batch=vv.batch and v.trade_id = vv.trade_id)'
