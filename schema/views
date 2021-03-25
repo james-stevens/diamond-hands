@@ -2,19 +2,19 @@
 
 sqlsh 'create view latest_values as
 	select v.* from spot_values v join (
-		select max(spot_value_id) "spot_value_id",trade_id
-		from spot_values group by 2) mx
-		using(spot_value_id)' \
+		select max(batch) "batch",trade_id
+		from spot_values
+		group by 2
+		) vv 
+	on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
 \
 \
 'create view latest_rates as 
-	select r.* from spot_rates r
-	join (
-		select max(spot_rate_id) "spot_rate_id",currency
-		from spot_rates
-		group by currency
+	select r.* from spot_rates r join (
+		select max(batch) "batch",currency
+		from spot_rates group by currency
 		) rr
-	using(spot_rate_id)' \
+	on (r.batch=rr.batch and r.currency=rr.currency)' \
 \
 \
 'create view end_of_day_value as
@@ -23,17 +23,16 @@ sqlsh 'create view latest_values as
 		from spot_values
 		where batch < date(now()) group by 2,3
 	) vv on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
-
 \
 \
 'create view end_of_week_value as
 	select v.* from spot_values v join (
-		select max(spot_value_id) "spot_value_id",trade_id
+		select max(batch) "batch",trade_id,date(batch)
 		from spot_values
 		where end_of_day and WEEKDAY(batch) = 6
-		group by trade_id
-		) eod
-	using(spot_value_id)' \
+		group by 2,3
+		) vv 
+	on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
 \
 \
 'create view current_value as
