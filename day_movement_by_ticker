@@ -7,8 +7,8 @@ sqlsh -s'|' -d stocks 'select
 		format(sum(s.current_value_gbp),2) "Now",
 		format(sum(s.current_value_gbp-t.total_cost_gbp),2) "Profit",
 		format(avg(s.current_price),2) "Price",
-		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format(avg(s.current_price-e.current_price),2) "SOD-Price",
+		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
 	join spot_values e on(t.eod_spot_value_id = e.spot_value_id)
@@ -38,8 +38,8 @@ sqlsh -s'|' -d stocks 'select
 		format(sum(s.current_value_gbp),2) "Now",
 		format(sum(s.current_value_gbp-t.total_cost_gbp),2) "Profit",
 		format(avg(s.current_price),2) "Price",
-		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format(avg(s.current_price-e.current_price),2) "SOD-Price",
+		format(sum(s.current_value_gbp-e.current_value_gbp),2) "Change",
 		format((sum(s.current_value_gbp-e.current_value_gbp)/sum(e.current_value_gbp))*100,2)
 	from trades t
 	join spot_values e on(t.eod_spot_value_id = e.spot_value_id)
