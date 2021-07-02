@@ -46,5 +46,3 @@ sqlsh -s'|' -d stocks 'select
 			printf "%-13s%11s%c[%sm%13s%c[0m%13s%c[%sm%11s%c[0m |%c[%sm%12s%10s%%%c[0m\n",$1,$2,27,col5,$3,27,$4,27,col5,$5,27,27,col,$6,$7,27
 			}
 		}'
-
-echo ""

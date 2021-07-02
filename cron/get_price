@@ -80,7 +80,10 @@ def mysql_connect():
 def get_prices(ticker):
     """ Request price for {ticker} from Yahoo Finance """
     url = "https://finance.yahoo.com/quote/" + ticker + "/"
-    response = requests.request("GET", url)
+    headers = {
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
+        }
+    response = requests.request("GET", url,headers=headers)
 
     js = None
     try:
