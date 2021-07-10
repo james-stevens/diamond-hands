@@ -163,3 +163,5 @@ for ticker in [t for t in tickers]:
 
         if not args.debug:
             cnx.query(sql)
+
+cnx.close()
