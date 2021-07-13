@@ -1,0 +1,555 @@
+<!--- (c) Copyright 2019-2020, James Stevens ... see LICENSE for details --->
+<!--- Alternative license arrangements are possible, contact me for more information --->
+<html>
+<script language="Javascript">
+	const debugAPI = false;
+</script>
+
+
+<style type='text/css'>
+
+.fullvis { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: visible; opacity: 1; text-align: center; }
+.fadein  { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
+.fadeout { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
+
+#topSpan{
+	background-color: #444466;
+	height: 55px;
+	line-height: 55px;
+	margin-top: 0px;
+	padding-left: 0px;
+	padding-top: 1px;
+	position: -webkit-sticky;
+	position: sticky;
+	top: 0px;
+	}
+
+html {
+	color: white;
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:10pt;
+	background-color:#444466;
+	scrollbar-base-color:#666699;
+	scrollbar-arrow-color:#ddddff;
+	}
+
+th {
+	color: black;
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:10pt;
+	background-color:#a0a0cc;
+	font-weight: bold;
+	padding-left: 6px;
+	padding-right: 6px;
+	}
+
+select {
+	color: black;
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 8pt;
+	}
+
+input {
+	color: black;
+	background-color: white;
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 8pt;
+	}
+
+.inputBad {
+	color: black;
+	background-color: #ffd0d0;
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 8pt;
+	}
+
+body {
+	color: white;
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:10pt;
+	margin-top: 0px;
+	background-color:#444466;
+	scrollbar-base-color:#666699;
+	scrollbar-arrow-color:#ddddff;
+	}
+
+
+a {
+	color: #b0b0ff;
+	text-decoration:none;
+	}
+
+a:hover {
+	text-decoration: underline;
+	}
+
+form {
+	margin:0px;
+	}
+
+.myBtn {
+	text-align: center;
+	display: inline-block;
+	background-color: #d0d0ff;
+	color: black;
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 10pt;
+	font-weight: bold;
+	border-radius: 25px;
+	padding: 5px;
+	padding-left: 10px;
+	padding-right: 10px;
+	cursor: pointer;
+	margin-top: 0px;
+	margin-left: 10px;
+	margin-bottom: 2px;
+	margin-right: 2px;
+	}
+
+.myBtn:hover {
+	box-shadow: 3px 3px #222244;
+	text-shadow: 1px 1px #ffffff;
+	}
+
+.myBtn:active {
+	position: relative;
+	box-shadow: none;
+	text-shadow: none;
+	top: 1px;
+	left: 1px;
+	}
+
+.dnskey {
+	color: #383855;
+	}
+
+td {
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:10pt;
+	vertical-align: top;
+	padding-left: 7px;
+	padding-right: 7px;
+	white-space: nowrap;
+	}
+
+.none { text-align: right; }
+.profit { color: #88ff88; text-align: right; }
+.profit:hover { background-color: #55dd55; color:black; text-align: right; }
+
+.loss { color: #ff6666; text-align: right; }
+.loss:hover { background-color: #dd5555; color:black; text-align: right; }
+
+.dataRow {
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 10pt;
+	cursor: pointer;
+	color: white;
+	background-color: #444466;
+	}
+
+.dataRow:hover {
+	background-color: #222244;
+	}
+
+
+.formPrompt {
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:10pt;
+	color: white;
+	text-align: right;
+	}
+
+
+.msgPop {
+	position: absolute;
+	left: 10px;
+	top: 20px;
+	font-family:Verdana,Arial,Helvetica,sans-serif;
+	font-size:16pt;
+	width: 95%;
+	background: #ffd0d0;
+	text-align: center;
+	color: black;
+	padding: 5px;
+	border-radius: 10px;
+	}
+
+.msgPopNo {
+	visibility: hidden;
+	opacity: 0; transition: visibility 0s 1s, opacity 1s linear;
+	}
+
+.msgPopYes {
+	visibility: visible;
+	opacity: 1; transition: opacity 0.5s linear;
+	}
+
+</style>
+
+<script language="Javascript">
+
+console.clear();
+
+var gbl = { 
+	server: window.location.host,
+	with_https: (window.location.protocol == "https:")
+	};
+
+var ctx = { }; // will store the context of what the user is up to
+
+
+//=============================================================================================
+// Some system constants
+//=============================================================================================
+
+//=============================================================================================
+// Some library functions
+//=============================================================================================
+
+function callApi(sfx,callback,inData)
+{
+	document.body.style.cursor="progress";
+
+	if (debugAPI) {
+		console.log("API>>>",sfx);
+		console.log("API>>>",inData);
+		}
+
+	// gbl.forms.forEach(i => i.style.display = "none");
+
+	if ((inData != null)&&(inData.method == "PUT"))
+		msg(`Requesting ... ${gbl.timer}`);
+	else
+		msg(`Loading ... ${gbl.timer}`);
+
+	let p = "https";
+	if (!gbl.with_https) p = "http";
+	let url = `${p}://${gbl.server}/v1/data/${sfx}`;
+	if (debugAPI) console.log("API-URL>>>",url);
+
+	let okResp = 200;
+	let httpCmd = { headers: { }, method: 'GET' };
+
+	if (inData != null) {
+		httpCmd.method = inData.method;
+		httpCmd.body = inData.json;
+		httpCmd.headers = {
+			'Accept': 'application/json',
+			'Content-Type': 'application/json'
+			}
+		if ("okResp" in inData) okResp = inData.okResp;
+		}
+	if (debugAPI) console.log("API-HEAD>>>",httpCmd);
+
+	fetch(url,httpCmd).then(response => {
+		if (debugAPI) console.log("API-Resp>>>",response);
+		if (response.status != okResp) {
+			response.text().then(
+				data => {
+					try {
+						e = JSON.parse(data);
+						errMsg(e.error);
+						}
+					catch {
+						errMsg(`ERROR: ${response.status} ${response.statusText}`)
+						}
+					},
+				() => errMsg(`ERROR: ${response.status} ${response.statusText}`)
+				);
+			msg("");
+			if ((inData != null)&&("callErr" in inData)) return callback(null);
+			return;
+			}
+
+		response.text().then(data => {
+			if ((inData != null)&&(inData.noData)) {
+				msg("");
+				callback(true);
+			} else {
+				let param = data;
+				try {
+					param = JSON.parse(data); }
+				catch {
+					param = data; }
+				msg("");
+				callback(param);
+				}
+			});
+
+		})
+		.catch(err => errMsg(`ERROR: Failed to connect to Diamond Hands`))
+
+	document.body.style.cursor="auto";
+}
+
+
+
+// This one function is danallison/downloadString.js
+// https://gist.github.com/danallison/3ec9d5314788b337b682
+
+function downloadFile(text, fileType, fileName) {
+	var blob = new Blob([text], { type: fileType });
+
+	var a = document.createElement('a');
+	a.download = fileName;
+	a.href = URL.createObjectURL(blob);
+	a.dataset.downloadurl = [fileType, a.download, a.href].join(':');
+	a.style.display = "none";
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+	msg("");
+}
+
+// end of -> danallison/downloadString.js
+
+
+
+function setState(title,state)
+{
+	gbl.state = state;
+	if (!("param" in gbl)) window.history.pushState(state,title,gbl.pathname);
+	document.title = title;
+	delete gbl.param;
+}
+
+
+//=============================================================================================
+// Common functions
+//=============================================================================================
+
+
+function btn(call,txt,hlp,sz) {
+	let ex=""
+	if (sz != null) ex = `style='width: ${sz}px;'`
+	return `<span ${ex} title="${hlp}" class=myBtn onClick="${call}; return false;">${txt}</span>`;
+}
+
+
+
+function updatePrices() {
+	callApi("trades",haveTrades, { method: "POST", callErr: true, json: JSON.stringify({ join: ":all:" }) });
+}
+
+
+
+function get_class(pl) {
+	if (pl > 0) return "profit";
+	if (pl < 0) return "loss";
+	return "none";
+}
+
+
+
+function makeRow(v)
+{
+	let opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+
+	x = `<tr class=dataRow><td>${v.name}</td>`;
+
+	pl = v.value - v.cost;
+	cls = "none"
+	if (pl > 0) cls = "profit"; 
+	if (pl < 0) cls="loss";
+	dca = v.native_cost / v.num;
+	x += `<td>${v.currency}</td>`
+	x += `<td class=none>${dca.toLocaleString(undefined,opts)}</td>`;
+	x += `<td class=${cls}>${v.value.toLocaleString(undefined,opts)}</td>`;
+	x += `<td class=${cls}>${v.cost.toLocaleString(undefined,opts)}</td>`;
+	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
+	x += "<td>&nbsp;</td>"
+
+	pl = v.value - v.week;
+	cls = get_class(pl);
+	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
+	x += "<td>&nbsp;</td>"
+
+	pl = v.price - v.day_price;
+	cent = (pl / v.day_price) * 100;
+	cls = get_class(pl);
+	x += `<td class=${cls}>${v.price.toLocaleString(undefined,opts)}</td>`;
+	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
+	per = `<td class=${cls}>${cent.toLocaleString(undefined,opts)}%</td>`;
+
+	pl = v.value - v.day;
+	cls = get_class(pl);
+	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
+	x += per;
+
+	return x+"</tr>";
+}
+
+
+
+function haveTrades(data) {
+	let batch_id = "";
+	let srt = [];
+	let vals = {};
+	let accts = {};
+
+	for(let i in data.trades) {
+		let t = data.trades[i].ticker.ticker;
+		vals[t] = { week_price:0, day_price:0, price:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,currency: data.trades[i].currency };
+
+		t = data.trades[i].account_held;
+		accts[t] = { week_price:0, day_price:0, price:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,currency: data.trades[i].currency };
+
+		batch_id = data.trades[i].spot_value_id.batch;
+		}
+
+	for (let v in vals) srt.push(v);
+
+	srt.sort((a,b) => {
+		if (vals[a].currency < vals[b].currency) return -1;
+		if (vals[a].currency > vals[b].currency) return 1;
+		if (a < b) return -1;
+		if (b < a) return 1;
+		return 0;
+		});
+
+	for(let i in data.trades) {
+		let t = data.trades[i];
+		let tt = t.ticker.ticker;
+		vals[tt].name = tt;
+		vals[tt].week_price = t.eow_spot_value_id.current_price;
+		vals[tt].day_price = t.eod_spot_value_id.current_price;
+		vals[tt].price = t.spot_value_id.current_price;
+		vals[tt].num += t.quantity;
+		vals[tt].native_cost += (t.price * t.quantity);
+		vals[tt].cost += t.total_cost_gbp;
+		vals[tt].value += t.spot_value_id.current_value_gbp;
+		vals[tt].week += t.eow_spot_value_id.current_value_gbp;
+		vals[tt].day += t.eod_spot_value_id.current_value_gbp;
+		
+		tt = t.account_held;
+		accts[tt].name = tt;
+		accts[tt].week_price = t.eow_spot_value_id.current_price;
+		accts[tt].day_price = t.eod_spot_value_id.current_price;
+		accts[tt].price = t.spot_value_id.current_price;
+		accts[tt].num += t.quantity;
+		accts[tt].native_cost += (t.price * t.quantity);
+		accts[tt].cost += t.total_cost_gbp;
+		accts[tt].value += t.spot_value_id.current_value_gbp;
+		accts[tt].week += t.eow_spot_value_id.current_value_gbp;
+		accts[tt].day += t.eod_spot_value_id.current_value_gbp;
+		}
+
+	let x = batch_id + "<p><table>";
+	x += "<tr><th>Ticker</th><th></th><th>DCA</th><th>Value</th><th>Cost</th><th>Total +/-</th>"
+	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th colspan=2>Day Change</th><th>Day +/-</th>"
+	x += "</tr>"
+
+	for(let i of srt) x += makeRow(vals[i]);
+	x += "<tr><td>&nbsp;</td></tr>";
+	for(let i in accts) x += makeRow(accts[i]);
+		
+
+	x += "</table>";
+	gbl.bot.innerHTML = x;
+
+	setTimeout(updatePrices,30000);
+}
+
+
+
+function startUp()
+{
+	gbl.bot = document.getElementById("lowerSpan");
+	updatePrices();
+}
+
+
+
+
+
+function unerrMsg()
+{
+	let m = document.getElementById("myMsgPop");
+	let t1 = m.innerHTML;
+	let t2 = gbl.lastErrMsg;
+	if (t2 == null) t2 = "";
+	if (t1 == t2) m.className = "msgPop msgPopNo";
+	delete gbl.lastErrMsg;
+}
+
+
+
+function errMsg(txt)
+{
+	let m = document.getElementById("myMsgPop");
+	m.className = 'msgPop msgPopYes';
+	m.innerHTML = `${gbl.warn} ${txt}`;
+	gbl.lastErrMsg = m.innerHTML;
+	msg("");
+	setTimeout(unerrMsg,2500);
+}
+
+
+
+function unpopMsg()
+{
+	let m = document.getElementById("showMsg");
+	let t1 = m.innerHTML;
+	let t2 = gbl.lastMsg;
+	if (t2 == null) t2 = "";
+	if (t1 == t2) m.className = "fadeout";
+	delete gbl.lastMsg;
+}
+
+
+
+function popMsg(txt)
+{
+	msg(txt,"fadein");
+	gbl.lastMsg = document.getElementById("showMsg").innerHTML;
+	setTimeout(unpopMsg,2500);
+}
+
+
+
+function msg(myMsg,newClass)
+{
+	let m = document.getElementById("showMsg");
+	if (!m) m = document.getElementById("lowerMsg");
+	if (!m) return;
+
+	if (newClass == null) newClass = "fullvis";
+	m.className = newClass;
+	m.innerHTML = myMsg;
+	delete gbl.lastMsg;
+}
+
+
+
+function keyEsc(e) {
+	if (e.key == "Escape") {
+		if ("edit" in ctx) return cancelAllEdits();
+		if ("addRR" in ctx) return loadThisZone();
+		if ("addZone" in ctx) return zoneList();
+		}
+}
+
+
+//=============================================================================================
+</script>
+
+
+
+<head>
+	<title>Diamond Hands</title>
+</head>
+<body onLoad="startUp();">
+
+<div id="topSpan">
+<table border=0 cellspacing=0 cellpadding=0 width=100%>
+<tr><td><h1 style="text-align:center">Diamond Hands</h1></td></tr>
+</table>
+</div>
+
+<div id="lowerSpan">
+</div>
+
+<div id=myMsgPop class='msgPop msgPopNo'></div>
+</body></html>
+
