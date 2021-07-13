@@ -125,7 +125,7 @@ form {
 
 td {
 	font-family:Verdana,Arial,Helvetica,sans-serif;
-	font-size:10pt;
+	font-size: 10pt;
 	vertical-align: top;
 	padding-left: 7px;
 	padding-right: 7px;
@@ -191,8 +191,12 @@ td {
 console.clear();
 
 var gbl = { 
-	server: window.location.host,
-	with_https: (window.location.protocol == "https:")
+    page: "&#x1F5CE;",
+    tick: "&#x2611;",
+    cross: "&#x2612;",
+    timer: "&#x23f3;",
+    bin: "&#x2702;",
+    warn: "&#x26a0;",
 	};
 
 var ctx = { }; // will store the context of what the user is up to
@@ -329,7 +333,11 @@ function btn(call,txt,hlp,sz) {
 
 
 function updatePrices() {
-	callApi("trades",haveTrades, { method: "POST", callErr: true, json: JSON.stringify({ join: ":all:" }) });
+	delete gbl.trades;
+	callApi("trades",data => {
+		gbl.trades = data;
+		displayTrades();
+		}, { method: "POST", callErr: true, json: JSON.stringify({ join: ":all:" }) });
 }
 
 
@@ -340,6 +348,14 @@ function get_class(pl) {
 	return "none";
 }
 
+
+function valCell(val,def,cmp)
+{
+    cls = "none"
+    if (def > cmp) cls = "profit";
+    else if (def < cmp) cls = "loss";
+	return `<td class=${cls}>${val.toLocaleString(undefined,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>`;
+}
 
 
 function makeRow(v)
@@ -353,100 +369,126 @@ function makeRow(v)
 	if (pl > 0) cls = "profit"; 
 	if (pl < 0) cls="loss";
 	dca = v.native_cost / v.num;
-	x += `<td>${v.currency}</td>`
-	x += `<td class=none>${dca.toLocaleString(undefined,opts)}</td>`;
-	x += `<td class=${cls}>${v.value.toLocaleString(undefined,opts)}</td>`;
-	x += `<td class=${cls}>${v.cost.toLocaleString(undefined,opts)}</td>`;
-	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
+
+	x += valCell(v.cost,0,0);
+	x += valCell(v.value,pl,0);
+	x += valCell(pl,pl,0);
+	if (v.showPrice)
+		x += `<td class=none>${dca.toLocaleString(undefined,opts)}</td>`;
+	else x += "<td></td>";
 	x += "<td>&nbsp;</td>"
 
-	pl = v.value - v.week;
-	cls = get_class(pl);
-	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
+	x += valCell(v.value - v.week,v.value,v.week);
 	x += "<td>&nbsp;</td>"
 
 	pl = v.price - v.day_price;
-	cent = (pl / v.day_price) * 100;
 	cls = get_class(pl);
-	x += `<td class=${cls}>${v.price.toLocaleString(undefined,opts)}</td>`;
-	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
-	per = `<td class=${cls}>${cent.toLocaleString(undefined,opts)}%</td>`;
+	if (v.showPrice) {
+		x += valCell(v.price,v.price,v.day_price)
+		x += valCell(v.price - v.day_price,v.price,v.day_price)
+		}
+	else x += "<td colspan=2></td>";
 
 	pl = v.value - v.day;
+	cent = (pl/v.day)*100
 	cls = get_class(pl);
 	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
-	x += per;
+	x += `<td class=${cls}>${cent.toLocaleString(undefined,opts)}%</td>`;
 
 	return x+"</tr>";
 }
 
 
 
-function haveTrades(data) {
-	let batch_id = "";
+function summaryItem(items,name,t,showPrice)
+{
+	let f = (t.currency=="GBP")?100:1;
+	if (!(name in items)) {
+		items[name] = {
+			name: name,
+			week_price:t.eow_spot_value_id.current_price * f,
+			day_price:t.eod_spot_value_id.current_price * f,
+			price:t.spot_value_id.current_price * f,
+			num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,
+			showPrice: showPrice,
+			currency: t.currency };
+		}
+	let itm = items[name];
+
+	itm.num += t.quantity;
+	itm.native_cost += (t.price * f * t.quantity);
+	itm.cost += t.total_cost_gbp;
+	itm.value += t.spot_value_id.current_value_gbp;
+	itm.week += t.eow_spot_value_id.current_value_gbp;
+	itm.day += t.eod_spot_value_id.current_value_gbp;
+}
+
+
+
+function spaceRow(gap) { return `<tr><td><div style="height: ${gap}px;"></div></td></tr>`; }
+
+
+
+function displayTrades() {
+	let batch_id = null;
 	let srt = [];
 	let vals = {};
 	let accts = {};
 
-	for(let i in data.trades) {
-		let t = data.trades[i].ticker.ticker;
-		vals[t] = { week_price:0, day_price:0, price:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,currency: data.trades[i].currency };
+	topLine();
 
-		t = data.trades[i].account_held;
-		accts[t] = { week_price:0, day_price:0, price:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,currency: data.trades[i].currency };
-
-		batch_id = data.trades[i].spot_value_id.batch;
+	delete gbl.sums;
+	gbl.sums = { vals:{}, accts:{}, curr:{}, total: {} };
+	for(let i in gbl.trades.trades) {
+		let t = gbl.trades.trades[i];
+		if (batch_id == null) batch_id = t.spot_value_id.batch;
+		summaryItem(gbl.sums.vals,t.ticker,t,true);
+		summaryItem(gbl.sums.accts,t.account_held,t,false);
+		summaryItem(gbl.sums.curr,t.currency,t,false);
+		summaryItem(gbl.sums.total,"Total",t,false);
 		}
 
-	for (let v in vals) srt.push(v);
+	multiCur = (Object.keys(gbl.sums.curr).length > 1);
+
+	for (let v in gbl.sums.vals) srt.push(v);
 
 	srt.sort((a,b) => {
-		if (vals[a].currency < vals[b].currency) return -1;
-		if (vals[a].currency > vals[b].currency) return 1;
+		if (gbl.sums.vals[a].currency < gbl.sums.vals[b].currency) return -1;
+		if (gbl.sums.vals[a].currency > gbl.sums.vals[b].currency) return 1;
 		if (a < b) return -1;
 		if (b < a) return 1;
 		return 0;
 		});
 
-	for(let i in data.trades) {
-		let t = data.trades[i];
-		let tt = t.ticker.ticker;
-		vals[tt].name = tt;
-		vals[tt].week_price = t.eow_spot_value_id.current_price;
-		vals[tt].day_price = t.eod_spot_value_id.current_price;
-		vals[tt].price = t.spot_value_id.current_price;
-		vals[tt].num += t.quantity;
-		vals[tt].native_cost += (t.price * t.quantity);
-		vals[tt].cost += t.total_cost_gbp;
-		vals[tt].value += t.spot_value_id.current_value_gbp;
-		vals[tt].week += t.eow_spot_value_id.current_value_gbp;
-		vals[tt].day += t.eod_spot_value_id.current_value_gbp;
-		
-		tt = t.account_held;
-		accts[tt].name = tt;
-		accts[tt].week_price = t.eow_spot_value_id.current_price;
-		accts[tt].day_price = t.eod_spot_value_id.current_price;
-		accts[tt].price = t.spot_value_id.current_price;
-		accts[tt].num += t.quantity;
-		accts[tt].native_cost += (t.price * t.quantity);
-		accts[tt].cost += t.total_cost_gbp;
-		accts[tt].value += t.spot_value_id.current_value_gbp;
-		accts[tt].week += t.eow_spot_value_id.current_value_gbp;
-		accts[tt].day += t.eod_spot_value_id.current_value_gbp;
-		}
-
-	let x = batch_id + "<p><table>";
-	x += "<tr><th>Ticker</th><th></th><th>DCA</th><th>Value</th><th>Cost</th><th>Total +/-</th>"
-	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th colspan=2>Day Change</th><th>Day +/-</th>"
+	let x = "<table align=center border=0 cellspacing=0 cellpadding=1><tr>";
+	x += "<tr><th>Ticker</th><th>Cost</th><th>Value</th><th>Total +/-</th><th>DCA</th>"
+	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th>+/-</th><th>Day Change</th><th>Day +/-</th>"
 	x += "</tr>"
 
-	for(let i of srt) x += makeRow(vals[i]);
-	x += "<tr><td>&nbsp;</td></tr>";
-	for(let i in accts) x += makeRow(accts[i]);
+	cur = gbl.sums.vals[srt[0]].currency;
+	for(let i of srt) {
+		if (gbl.sums.vals[i].currency != cur) {
+			if (cur in gbl.sums.curr)
+				x += spaceRow(5) + makeRow(gbl.sums.curr[cur]) + spaceRow(5);
+			cur = gbl.sums.vals[i].currency;
+			}
+		x += makeRow(gbl.sums.vals[i]);
+		}
+
+	if (multiCur)
+		x += spaceRow(5) + makeRow(gbl.sums.curr[cur]) + spaceRow(5);
+
+	x += spaceRow(5);
+	for(let i in gbl.sums.accts) x += makeRow(gbl.sums.accts[i]);
+	x += spaceRow(8);
+	for(let i in gbl.sums.total) x += makeRow(gbl.sums.total[i]);
 		
 
 	x += "</table>";
 	gbl.bot.innerHTML = x;
+
+	let m = document.getElementById("showBatch");
+	if (m) m.innerHTML = batch_id;
 
 	setTimeout(updatePrices,30000);
 }
@@ -455,7 +497,13 @@ function haveTrades(data) {
 
 function startUp()
 {
+	gbl.pathname = window.location.pathname;
+	gbl.with_https = (window.location.protocol == "https:");
+	gbl.server = window.location.host;
+
 	gbl.bot = document.getElementById("lowerSpan");
+	gbl.top = document.getElementById("topSpan");
+
 	updatePrices();
 }
 
@@ -528,6 +576,21 @@ function keyEsc(e) {
 		if ("addRR" in ctx) return loadThisZone();
 		if ("addZone" in ctx) return zoneList();
 		}
+}
+
+
+
+function topLine()
+{
+    let y = "<table style='margin-top:10px;' border=0 cellspacing=0 cellpadding=0 width=100%><tr><td width=1 class=dataRow>"
+        + `<font size=+1><a title='Open this page in a new window' target=_blank href='${window.origin}${gbl.pathname}?`;
+
+    let x = `'>${gbl.page}</a></font></td><td>` + btn("updatePrices()",gbl.server,"Reload Data");
+    x += "</td><td width=100% align=center><span class='fullvis' id='showMsg'></span></td>";
+    x += "<td><div id='showBatch'></div></td>";
+    x += "</tr><table><hr>";
+
+    gbl.top.innerHTML = y + btoa(JSON.stringify(gbl.state)) + x;
 }
 
 
