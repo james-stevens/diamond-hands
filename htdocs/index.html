@@ -41,6 +41,7 @@ th {
 	font-weight: bold;
 	padding-left: 6px;
 	padding-right: 6px;
+	white-space: nowrap;
 	}
 
 select {
@@ -147,9 +148,27 @@ td {
 	background-color: #444466;
 	}
 
-.dataRow:hover {
+.dataRow:hover { background-color: #222244; }
+
+.dataRow2 {
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 10pt;
+	cursor: pointer;
+	color: white;
 	background-color: #222244;
 	}
+
+.dataRow2:hover { background-color: #666688; }
+
+.dataRowOff {
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 10pt;
+	cursor: pointer;
+	color: white;
+	background-color: #444444;
+	}
+
+.dataRowOff:hover { background-color: #666688; }
 
 
 .formPrompt {
@@ -200,11 +219,6 @@ var gbl = {
 	};
 
 var ctx = { }; // will store the context of what the user is up to
-
-
-//=============================================================================================
-// Some system constants
-//=============================================================================================
 
 //=============================================================================================
 // Some library functions
@@ -288,28 +302,6 @@ function callApi(sfx,callback,inData)
 
 
 
-// This one function is danallison/downloadString.js
-// https://gist.github.com/danallison/3ec9d5314788b337b682
-
-function downloadFile(text, fileType, fileName) {
-	var blob = new Blob([text], { type: fileType });
-
-	var a = document.createElement('a');
-	a.download = fileName;
-	a.href = URL.createObjectURL(blob);
-	a.dataset.downloadurl = [fileType, a.download, a.href].join(':');
-	a.style.display = "none";
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-	msg("");
-}
-
-// end of -> danallison/downloadString.js
-
-
-
 function setState(title,state)
 {
 	gbl.state = state;
@@ -334,66 +326,83 @@ function btn(call,txt,hlp,sz) {
 
 function updatePrices() {
 	delete gbl.trades;
+	delete gbl.spot_prices;
+	setBatch("");
+
 	callApi("trades",data => {
 		gbl.trades = data;
-		displayTrades();
+
+		let sp_ids = [];
+		for(i in data.trades) {
+			let t = data.trades[i];
+			if (!(sp_ids.includes(t.spot_value_id.spot_price_id)))
+				sp_ids.push(t.spot_value_id.spot_price_id);
+			}
+
+		qry = { "where": { "=":{ "spot_price_id": sp_ids } }, "by":"spot_price_id" };
+		callApi("spot_prices",data => {
+			gbl.spot_prices = data.spot_prices;
+			displayTrades();
+			}, { method: "POST", callErr: true, json: JSON.stringify(qry) });
+
 		}, { method: "POST", callErr: true, json: JSON.stringify({ join: ":all:" }) });
 }
 
 
 
-function get_class(pl) {
-	if (pl > 0) return "profit";
-	if (pl < 0) return "loss";
-	return "none";
-}
+function flfmt(val) { return val.toLocaleString(undefined,{ minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 
-function valCell(val,def,cmp)
+
+function valCell(val,def,cmp,sfx)
 {
+    let s = ""
+    if (sfx != null) s = sfx;
     cls = "none"
     if (def > cmp) cls = "profit";
     else if (def < cmp) cls = "loss";
-	return `<td class=${cls}>${val.toLocaleString(undefined,{ minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>`;
+	return `<td class=${cls}>${flfmt(val)}${s}</td>`;
 }
 
 
-function makeRow(v)
+
+function makeRow(v,sty)
 {
-	let opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+	let showStyle = (sty)?sty:"dataRow";
+	if ((v.showPrice)&&(!v.market_open)) showStyle = "dataRowOff";
 
-	x = `<tr class=dataRow><td>${v.name}</td>`;
+	let x = `<tr class=${showStyle}>`
+	let dca = v.native_cost / v.num;
 
-	pl = v.value - v.cost;
-	cls = "none"
-	if (pl > 0) cls = "profit"; 
-	if (pl < 0) cls="loss";
-	dca = v.native_cost / v.num;
+	x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
 
 	x += valCell(v.cost,0,0);
-	x += valCell(v.value,pl,0);
-	x += valCell(pl,pl,0);
+	x += valCell(v.value,v.value,v.cost);
+	x += valCell(v.value - v.cost,v.value,v.cost);
+	x += valCell(((v.value - v.cost)/v.cost)*100,v.value,v.cost,"%");
+	x += valCell(v.cent / v.count,v.value,v.cost,"%");
+
+	let p = ((v.value - v.cost) / v.total_days) * 365.25;
+	let g = v.cost / v.count;
+
+	x += valCell((p/g)*100,v.value,v.cost,"%");
+
 	if (v.showPrice)
-		x += `<td class=none>${dca.toLocaleString(undefined,opts)}</td>`;
+		x += `<td class=none>${flfmt(dca)}</td>`;
 	else x += "<td></td>";
 	x += "<td>&nbsp;</td>"
 
 	x += valCell(v.value - v.week,v.value,v.week);
 	x += "<td>&nbsp;</td>"
 
-	pl = v.price - v.day_price;
-	cls = get_class(pl);
 	if (v.showPrice) {
 		x += valCell(v.price,v.price,v.day_price)
 		x += valCell(v.price - v.day_price,v.price,v.day_price)
 		}
 	else x += "<td colspan=2></td>";
 
-	pl = v.value - v.day;
-	cent = (pl/v.day)*100
-	cls = get_class(pl);
-	x += `<td class=${cls}>${pl.toLocaleString(undefined,opts)}</td>`;
-	x += `<td class=${cls}>${cent.toLocaleString(undefined,opts)}%</td>`;
+	x += valCell(v.value - v.day,v.value,v.day);
+	x += valCell(((v.value - v.day)/v.day)*100,v.value,v.day,"%");
 
 	return x+"</tr>";
 }
@@ -409,12 +418,31 @@ function summaryItem(items,name,t,showPrice)
 			week_price:t.eow_spot_value_id.current_price * f,
 			day_price:t.eod_spot_value_id.current_price * f,
 			price:t.spot_value_id.current_price * f,
-			num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,
+			cent:0, count:0, total_days:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,
+			market_open: false,
 			showPrice: showPrice,
-			currency: t.currency };
+			google: t.ticker.google,
+			currency: t.currency
+			};
 		}
+
 	let itm = items[name];
 
+	if (t.spot_value_id.spot_price_id in gbl.spot_prices) {
+		if (!itm.market_open) itm.market_open = (gbl.spot_prices[t.spot_value_id.spot_price_id].market_state=="REGULAR");
+		}
+
+	let now = new Date(t.spot_value_id.batch).getTime() / 1000 / 86400;
+	let buy = new Date(t.when_dt).getTime() / 1000 / 86400;
+
+	itm.total_days += (now - buy);
+
+	let gain = t.spot_value_id.current_value_gbp - t.total_cost_gbp;
+	let day_gain = (gain / (now - buy)) * 365.25
+	let cent = (day_gain / t.total_cost_gbp) * 100;
+	itm.cent += cent;
+
+	itm.count++;
 	itm.num += t.quantity;
 	itm.native_cost += (t.price * f * t.quantity);
 	itm.cost += t.total_cost_gbp;
@@ -442,7 +470,7 @@ function displayTrades() {
 	for(let i in gbl.trades.trades) {
 		let t = gbl.trades.trades[i];
 		if (batch_id == null) batch_id = t.spot_value_id.batch;
-		summaryItem(gbl.sums.vals,t.ticker,t,true);
+		summaryItem(gbl.sums.vals,t.ticker.ticker,t,true);
 		summaryItem(gbl.sums.accts,t.account_held,t,false);
 		summaryItem(gbl.sums.curr,t.currency,t,false);
 		summaryItem(gbl.sums.total,"Total",t,false);
@@ -460,39 +488,42 @@ function displayTrades() {
 		return 0;
 		});
 
-	let x = "<table align=center border=0 cellspacing=0 cellpadding=1><tr>";
-	x += "<tr><th>Ticker</th><th>Cost</th><th>Value</th><th>Total +/-</th><th>DCA</th>"
-	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th>+/-</th><th>Day Change</th><th>Day +/-</th>"
+	let x = "<table align=center border=0 cellspacing=1 cellpadding=1><tr>";
+	x += "<tr><th colspan=1>Ticker</th><th>Cost</th><th>Value</th><th>Total +/-</th><th>Total %</th><th>Wgt %</th><th>Wgt %</th><th>DCA</th>"
+	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th>+/-</th><th colspan=2>Day +/-</th>"
 	x += "</tr>"
 
 	cur = gbl.sums.vals[srt[0]].currency;
 	for(let i of srt) {
-		if (gbl.sums.vals[i].currency != cur) {
+		if ((multiCur)&&(gbl.sums.vals[i].currency != cur)) {
 			if (cur in gbl.sums.curr)
-				x += spaceRow(5) + makeRow(gbl.sums.curr[cur]) + spaceRow(5);
+				x += makeRow(gbl.sums.curr[cur],"dataRow2") + spaceRow(3);
 			cur = gbl.sums.vals[i].currency;
 			}
 		x += makeRow(gbl.sums.vals[i]);
 		}
 
 	if (multiCur)
-		x += spaceRow(5) + makeRow(gbl.sums.curr[cur]) + spaceRow(5);
+		x += makeRow(gbl.sums.curr[cur],"dataRow2") + spaceRow(3);
 
 	x += spaceRow(5);
 	for(let i in gbl.sums.accts) x += makeRow(gbl.sums.accts[i]);
-	x += spaceRow(8);
-	for(let i in gbl.sums.total) x += makeRow(gbl.sums.total[i]);
-		
+	for(let i in gbl.sums.total) x += makeRow(gbl.sums.total[i],"dataRow2");
 
 	x += "</table>";
 	gbl.bot.innerHTML = x;
 
-	let m = document.getElementById("showBatch");
-	if (m) m.innerHTML = batch_id;
+	setBatch(batch_id);
 
 	setTimeout(updatePrices,30000);
 }
 
+
+function setBatch(id)
+{
+	let m = document.getElementById("showBatch");
+	if (m) m.innerHTML = id;
+}
 
 
 function startUp()
@@ -566,16 +597,6 @@ function msg(myMsg,newClass)
 	m.className = newClass;
 	m.innerHTML = myMsg;
 	delete gbl.lastMsg;
-}
-
-
-
-function keyEsc(e) {
-	if (e.key == "Escape") {
-		if ("edit" in ctx) return cancelAllEdits();
-		if ("addRR" in ctx) return loadThisZone();
-		if ("addZone" in ctx) return zoneList();
-		}
 }
 
 
