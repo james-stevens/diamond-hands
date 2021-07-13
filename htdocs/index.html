@@ -165,7 +165,7 @@ td {
 	font-size: 10pt;
 	cursor: pointer;
 	color: white;
-	background-color: #444444;
+	background-color: #442222;
 	}
 
 .dataRowOff:hover { background-color: #666688; }
@@ -374,7 +374,10 @@ function makeRow(v,sty)
 	let x = `<tr class=${showStyle}>`
 	let dca = v.native_cost / v.num;
 
-	x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
+	if ((v.showPrice)&&(v.google))
+		x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
+	else
+		x += `<td>${v.name}</td>`;
 
 	x += valCell(v.cost,0,0);
 	x += valCell(v.value,v.value,v.cost);
@@ -421,7 +424,7 @@ function summaryItem(items,name,t,showPrice)
 			cent:0, count:0, total_days:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,
 			market_open: false,
 			showPrice: showPrice,
-			google: t.ticker.google,
+			google: (showPrice)?t.ticker.google:null,
 			currency: t.currency
 			};
 		}
