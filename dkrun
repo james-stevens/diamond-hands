@@ -1,6 +1,6 @@
 #! /bin/sh
 
 docker run --read-only -it \
-	-v /usr/local/certs:/opt/certs \
+	-v /opt/pems:/opt/pems \
 	--env-file /usr/local/etc/autosql.env \
 	-p 800:443 diamond-hands
