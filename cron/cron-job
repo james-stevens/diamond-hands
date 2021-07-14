@@ -1,8 +1,11 @@
-#! /bin/bash
+#! /bin/sh
 
-. /opt/mylogin/stocks
+if test -f /usr/local/etc/stocks.login
+	then
+		. /usr/local/etc/stocks.login
+	fi
 
-base="/root/github/diamond-hands/cron"
+base="/usr/local/diamond-hands"
 
 {
 if test "$1" = "EOD"
@@ -13,4 +16,4 @@ if test "$1" = "EOD"
 		${base}/get_price
 		${base}/update_batches
 	fi
-} 2>&1 | logger -t get_price -i
+} 2>&1 | logger -t get_price
