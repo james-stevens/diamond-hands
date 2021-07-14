@@ -209,7 +209,7 @@ td {
 
 console.clear();
 
-var gbl = { 
+var gbl = {
     page: "&#x1F5CE;",
     tick: "&#x2611;",
     cross: "&#x2612;",
@@ -218,7 +218,10 @@ var gbl = {
     warn: "&#x26a0;",
 	};
 
-var ctx = { }; // will store the context of what the user is up to
+// will store the context of what the user is up to which the router will use to go back there
+var ctx = { };
+
+var timers = [];
 
 //=============================================================================================
 // Some library functions
@@ -339,10 +342,12 @@ function updatePrices() {
 				sp_ids.push(t.spot_value_id.spot_price_id);
 			}
 
-		qry = { "where": { "=":{ "spot_price_id": sp_ids } }, "by":"spot_price_id" };
+		let qry = { "where": { "=":{ "spot_price_id": sp_ids } }, "by":"spot_price_id" };
+
 		callApi("spot_prices",data => {
 			gbl.spot_prices = data.spot_prices;
 			displayTrades();
+			repeatUpdate();
 			}, { method: "POST", callErr: true, json: JSON.stringify(qry) });
 
 		}, { method: "POST", callErr: true, json: JSON.stringify({ join: ":all:" }) });
@@ -460,11 +465,12 @@ function spaceRow(gap) { return `<tr><td><div style="height: ${gap}px;"></div></
 
 
 
-function displayTrades() {
-	let batch_id = null;
-	let srt = [];
-	let vals = {};
-	let accts = {};
+function displayTrades()
+{
+let batch_id = null;
+let srt = [];
+let vals = {};
+let accts = {};
 
 	topLine();
 
@@ -518,7 +524,14 @@ function displayTrades() {
 
 	setBatch(batch_id);
 
-	setTimeout(updatePrices,30000);
+}
+
+function repeatUpdate()
+{
+let id=0;
+
+	while(id = timers.pop()) clearTimeout(id);
+	timers.push(setTimeout(updatePrices,30000));
 }
 
 
