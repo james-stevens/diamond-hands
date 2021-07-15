@@ -16,4 +16,4 @@ if test "$1" = "EOD"
 		${base}/get_price
 		${base}/update_batches
 	fi
-} 2>&1 | logger -t get_price
+} 2>&1 | ${base}/pylogger -i -t get_price -f local0
