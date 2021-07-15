@@ -1,13 +1,15 @@
-#! /bin/bash
+#! /bin/sh
+
+base="/usr/local/diamond-hands"
 
 echo "Pre-Prices"
 
-sqlsh 'insert into tickers(ticker)
+${base}/pysqlsh 'insert into tickers(ticker)
 	select distinct ticker
 	from trades
 	where ticker not in (select ticker from tickers)' \
  \
-	'insert into tickers(ticker) 
+	'insert into tickers(ticker)
 	select distinct concat("GBP",currency,"=X")
 	from trades
 	where currency != "GBP"

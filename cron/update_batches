@@ -1,8 +1,10 @@
-#! /bin/bash
+#! /bin/sh
+
+base="/usr/local/diamond-hands"
 
 echo "Update"
 
-sqlsh 'insert into spot_rates 
+${base}/pysqlsh 'insert into spot_rates
 	select p.batch,substr(p.ticker,4,3),p.price,NULL,p.spot_price_id
 	from spot_prices p
 	left join spot_rates r on(substr(p.ticker,4,3)=r.currency and p.batch=r.batch)
