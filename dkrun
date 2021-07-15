@@ -3,4 +3,4 @@
 docker run --read-only -it \
 	-v /opt/pems:/opt/pems \
 	--env-file /usr/local/etc/autosql.env \
-	-p 800:443 diamond-hands
+	-p 800:443 diamond-hands $*

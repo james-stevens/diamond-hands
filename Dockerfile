@@ -1,5 +1,7 @@
 FROM auto-skew-elle
 
+run apk add py3-requests
+
 RUN mkdir -p /usr/local/diamond-hands
 COPY cron/* /usr/local/diamond-hands/
 COPY stocks.yml /usr/local/etc
