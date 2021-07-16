@@ -388,12 +388,8 @@ function makeRow(v,sty)
 	x += valCell(v.value,v.value,v.cost);
 	x += valCell(v.value - v.cost,v.value,v.cost);
 	x += valCell(((v.value - v.cost)/v.cost)*100,v.value,v.cost,"%");
-	x += valCell(v.cent / v.count,v.value,v.cost,"%");
 
-	let p = ((v.value - v.cost) / v.total_days) * 365.25;
-	let g = v.cost / v.count;
-
-	x += valCell((p/g)*100,v.value,v.cost,"%");
+	x += valCell((v.total_day_gain/v.cost)*100,v.value,v.cost,"%");
 
 	if (v.showPrice)
 		x += `<td class=none>${flfmt(dca)}</td>`;
@@ -416,6 +412,8 @@ function makeRow(v,sty)
 }
 
 
+function numDays(dt) { return new Date(dt).getTime() / 1000 / 86400; }
+
 
 function summaryItem(items,name,t,showPrice)
 {
@@ -423,10 +421,10 @@ function summaryItem(items,name,t,showPrice)
 	if (!(name in items)) {
 		items[name] = {
 			name: name,
-			week_price:t.eow_spot_value_id.current_price * f,
-			day_price:t.eod_spot_value_id.current_price * f,
-			price:t.spot_value_id.current_price * f,
-			cent:0, count:0, total_days:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,
+			week_price: t.eow_spot_value_id.current_price * f,
+			day_price: t.eod_spot_value_id.current_price * f,
+			price: t.spot_value_id.current_price * f,
+			total_day_gain:0, count:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,
 			market_open: false,
 			showPrice: showPrice,
 			google: (showPrice)?t.ticker.google:null,
@@ -436,19 +434,14 @@ function summaryItem(items,name,t,showPrice)
 
 	let itm = items[name];
 
+	let now = numDays(t.spot_value_id.batch);
+	let buy = numDays(t.when_dt);
+
 	if (t.spot_value_id.spot_price_id in gbl.spot_prices) {
-		if (!itm.market_open) itm.market_open = (gbl.spot_prices[t.spot_value_id.spot_price_id].market_state=="REGULAR");
+		let spt = gbl.spot_prices[t.spot_value_id.spot_price_id];
+		now = numDays(spt.when_dt);
+		if (!itm.market_open) itm.market_open = (spt.market_state=="REGULAR");
 		}
-
-	let now = new Date(t.spot_value_id.batch).getTime() / 1000 / 86400;
-	let buy = new Date(t.when_dt).getTime() / 1000 / 86400;
-
-	itm.total_days += (now - buy);
-
-	let gain = t.spot_value_id.current_value_gbp - t.total_cost_gbp;
-	let day_gain = (gain / (now - buy)) * 365.25
-	let cent = (day_gain / t.total_cost_gbp) * 100;
-	itm.cent += cent;
 
 	itm.count++;
 	itm.num += t.quantity;
@@ -457,6 +450,7 @@ function summaryItem(items,name,t,showPrice)
 	itm.value += t.spot_value_id.current_value_gbp;
 	itm.week += t.eow_spot_value_id.current_value_gbp;
 	itm.day += t.eod_spot_value_id.current_value_gbp;
+	itm.total_day_gain += ((t.spot_value_id.current_value_gbp - t.total_cost_gbp) / (now - buy)) * 365.25;
 }
 
 
@@ -498,7 +492,7 @@ let accts = {};
 		});
 
 	let x = "<table align=center border=0 cellspacing=1 cellpadding=1><tr>";
-	x += "<tr><th colspan=1>Ticker</th><th>Cost</th><th>Value</th><th>Total +/-</th><th>Total %</th><th>Wgt %</th><th>Wgt %</th><th>DCA</th>"
+	x += "<tr><th colspan=1>Ticker</th><th>Cost</th><th>Value</th><th>Total +/-</th><th>Total %</th><th>Wgt %</th><th>DCA</th>"
 	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th>+/-</th><th colspan=2>Day +/-</th>"
 	x += "</tr>"
 
