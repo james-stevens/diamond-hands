@@ -381,8 +381,13 @@ function makeRow(v,sty)
 
 	if ((v.showPrice)&&(v.google))
 		x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
-	else
-		x += `<td>${v.name}</td>`;
+	else {
+		console.log(v.name);
+		if (v.name == "GBP")
+			x += `<td><a href="https://www.google.com/finance/quote/GBP-USD" target=_window>${v.name}</a></td>`;
+		else
+			x += `<td>${v.name}</td>`;
+	}
 
 	x += valCell(v.cost,0,0);
 	x += valCell(v.value,v.value,v.cost);
