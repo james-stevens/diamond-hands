@@ -393,7 +393,7 @@ function makeRow(v,obj)
 	let x = `<tr onClick="clickRow('${v.name}');" class=${showStyle}>`;
 	let dca = v.native_cost / v.num;
 
-	if ((obj)&&("noTag" in obj)) x += "<td></td>";
+	if ((obj)&&("tag" in obj)) x += `<td>${obj.tag}</td>`;
 	else {
 		if ((v.showPrice)&&(v.google))
 			x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
@@ -501,6 +501,7 @@ let batch_id = null;
 	multiCur = (Object.keys(gbl.sums.curr).length > 1);
 
 	let x = "<table align=center border=0 cellspacing=1 cellpadding=1><tr>";
+	x += "<colgroup><col width=150></colgroup>"
 	x += "<tr><th colspan=1>Ticker</th><th>Cost</th><th>Value</th><th>Total +/-</th><th>Total %</th><th>Wgt %</th><th>DCA</th>"
 	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th>+/-</th><th colspan=2>Day +/-</th>"
 	x += "</tr>"
@@ -520,7 +521,7 @@ let batch_id = null;
 		x += `<tbody style="display: ${sty};" id="blk_${i}">`;
 		for(let tr in gbl.trades) {
 			if (gbl.trades[tr].ticker.ticker == i)
-				x += makeRow(gbl.sums.ones[gbl.trades[tr].trade_id],{ "sty":"subRow","noTag":true });
+				x += makeRow(gbl.sums.ones[gbl.trades[tr].trade_id],{ "sty":"subRow","tag":gbl.trades[tr].when_dt.substr(0,16) });
 			}
 		x += "</tbody>";
 		}
