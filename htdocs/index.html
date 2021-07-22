@@ -367,6 +367,7 @@ function clickRow(ticker)
 	if (("openTag" in ctx)&&(ctx.openTag != ticker)) {
 		x = document.getElementById(`blk_${ctx.openTag}`);
 		if (x) x.style.display = "none";
+		delete ctx.openTag;
 		}
 
 	x = document.getElementById(`blk_${ticker}`);
