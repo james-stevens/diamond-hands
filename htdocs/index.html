@@ -140,25 +140,14 @@ td {
 .loss { color: #ff6666; text-align: right; }
 .loss:hover { background-color: #dd5555; color:black; text-align: right; }
 
-.dataRow {
-	font-family: Verdana,Arial,Helvetica,sans-serif;
-	font-size: 10pt;
-	cursor: pointer;
-	color: white;
-	background-color: #444466;
-	}
-
+.dataRow { font-family: Verdana,Arial,Helvetica,sans-serif; font-size: 10pt; cursor: pointer; color: white; background-color: #444466; }
 .dataRow:hover { background-color: #666688; }
 
-.dataRow2 {
-	font-family: Verdana,Arial,Helvetica,sans-serif;
-	font-size: 10pt;
-	cursor: pointer;
-	color: white;
-	background-color: #222244;
-	}
+.summaryRow { font-family: Verdana,Arial,Helvetica,sans-serif; font-size: 10pt; cursor: pointer; color: white; background-color: #222244; }
+.summaryRow:hover { background-color: #666688; }
 
-.dataRow2:hover { background-color: #666688; }
+.subRow { font-family: Verdana,Arial,Helvetica,sans-serif; font-size: 10pt; cursor: pointer; color: white; background-color: #4e4e6f; }
+.subRow:hover { background-color: #666688; }
 
 .dataRowOff {
 	font-family: Verdana,Arial,Helvetica,sans-serif;
@@ -332,8 +321,10 @@ function updatePrices() {
 	delete gbl.spot_prices;
 	setBatch("");
 
+	let trades_qry = { "order": ["currency","ticker","when_dt"], join: ":all:" };
+
 	callApi("trades",data => {
-		gbl.trades = data;
+		gbl.trades = data.trades;
 
 		let sp_ids = [];
 		for(i in data.trades) {
@@ -342,15 +333,15 @@ function updatePrices() {
 				sp_ids.push(t.spot_value_id.spot_price_id);
 			}
 
-		let qry = { "where": { "=":{ "spot_price_id": sp_ids } }, "by":"spot_price_id" };
+		let spot_price_qry = { "where": { "=":{ "spot_price_id": sp_ids } }, "by":"spot_price_id" };
 
 		callApi("spot_prices",data => {
 			gbl.spot_prices = data.spot_prices;
 			displayTrades();
 			repeatUpdate();
-			}, { method: "POST", callErr: true, json: JSON.stringify(qry) });
+			}, { method: "POST", callErr: true, json: JSON.stringify(spot_price_qry) });
 
-		}, { method: "POST", callErr: true, json: JSON.stringify({ join: ":all:" }) });
+		}, { method: "POST", callErr: true, json: JSON.stringify(trades_qry) });
 }
 
 
@@ -371,22 +362,47 @@ function valCell(val,def,cmp,sfx)
 
 
 
-function makeRow(v,sty)
+function clickRow(ticker)
 {
-	let showStyle = (sty)?sty:"dataRow";
+	if (("openTag" in ctx)&&(ctx.openTag != ticker)) {
+		x = document.getElementById(`blk_${ctx.openTag}`);
+		if (x) x.style.display = "none";
+		}
+
+	x = document.getElementById(`blk_${ticker}`);
+	if (!x) return
+
+	if (x.style.display == "none") {
+		x.style.display = "table-row-group";
+		ctx.openTag = ticker;
+	} else {
+		x.style.display = "none";
+		delete ctx.openTag;
+	}
+}
+
+
+
+function makeRow(v,obj)
+{
+	let showStyle = "dataRow";
+	if ((obj)&&("sty" in obj)) showStyle = obj.sty;
+
 	if ((v.showPrice)&&(!v.market_open)) showStyle = "dataRowOff";
 
-	let x = `<tr class=${showStyle}>`
+	let x = `<tr onClick="clickRow('${v.name}');" class=${showStyle}>`;
 	let dca = v.native_cost / v.num;
 
-	if ((v.showPrice)&&(v.google))
-		x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
+	if ((obj)&&("noTag" in obj)) x += "<td></td>";
 	else {
-		console.log(v.name);
-		if (v.name == "GBP")
-			x += `<td><a href="https://www.google.com/finance/quote/GBP-USD" target=_window>${v.name}</a></td>`;
-		else
-			x += `<td>${v.name}</td>`;
+		if ((v.showPrice)&&(v.google))
+			x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
+		else {
+			if (v.name == "GBP")
+				x += `<td><a href="https://www.google.com/finance/quote/GBP-USD" target=_window>${v.name}</a></td>`;
+			else
+				x += `<td>${v.name}</td>`;
+		}
 	}
 
 	x += valCell(v.cost,0,0);
@@ -467,56 +483,60 @@ function spaceRow(gap) { return `<tr><td><div style="height: ${gap}px;"></div></
 function displayTrades()
 {
 let batch_id = null;
-let srt = [];
-let vals = {};
-let accts = {};
 
 	topLine();
 
 	delete gbl.sums;
-	gbl.sums = { vals:{}, accts:{}, curr:{}, total: {} };
-	for(let i in gbl.trades.trades) {
-		let t = gbl.trades.trades[i];
+	gbl.sums = { ones: {}, vals: {}, accts: {}, curr: {}, total: {} };
+	for(let i in gbl.trades) {
+		let t = gbl.trades[i];
 		if (batch_id == null) batch_id = t.spot_value_id.batch;
 		summaryItem(gbl.sums.vals,t.ticker.ticker,t,true);
 		summaryItem(gbl.sums.accts,t.account_held,t,false);
 		summaryItem(gbl.sums.curr,t.currency,t,false);
 		summaryItem(gbl.sums.total,"Total",t,false);
+		summaryItem(gbl.sums.ones,t.trade_id,t,true);
 		}
 
 	multiCur = (Object.keys(gbl.sums.curr).length > 1);
-
-	for (let v in gbl.sums.vals) srt.push(v);
-
-	srt.sort((a,b) => {
-		if (gbl.sums.vals[a].currency < gbl.sums.vals[b].currency) return -1;
-		if (gbl.sums.vals[a].currency > gbl.sums.vals[b].currency) return 1;
-		if (a < b) return -1;
-		if (b < a) return 1;
-		return 0;
-		});
 
 	let x = "<table align=center border=0 cellspacing=1 cellpadding=1><tr>";
 	x += "<tr><th colspan=1>Ticker</th><th>Cost</th><th>Value</th><th>Total +/-</th><th>Total %</th><th>Wgt %</th><th>DCA</th>"
 	x += "<th></th><th>Week +/-</th><th></th><th>Price</th><th>+/-</th><th colspan=2>Day +/-</th>"
 	x += "</tr>"
 
-	cur = gbl.sums.vals[srt[0]].currency;
-	for(let i of srt) {
+	cur = gbl.trades[0].currency;
+	for(let i in gbl.sums.vals) {
 		if ((multiCur)&&(gbl.sums.vals[i].currency != cur)) {
 			if (cur in gbl.sums.curr)
-				x += makeRow(gbl.sums.curr[cur],"dataRow2") + spaceRow(3);
+				x += makeRow(gbl.sums.curr[cur],{"sty":"summaryRow"}) + spaceRow(3);
 			cur = gbl.sums.vals[i].currency;
 			}
 		x += makeRow(gbl.sums.vals[i]);
+
+		sty = "none";
+		if (("openTag" in ctx)&&(ctx.openTag == i)) sty = "table-row-group";
+
+		x += `<tbody style="display: ${sty};" id="blk_${i}">`;
+		for(let tr in gbl.trades) {
+			if (gbl.trades[tr].ticker.ticker == i)
+				x += makeRow(gbl.sums.ones[gbl.trades[tr].trade_id],{ "sty":"subRow","noTag":true });
+			}
+		x += "</tbody>";
 		}
 
 	if (multiCur)
-		x += makeRow(gbl.sums.curr[cur],"dataRow2") + spaceRow(3);
+		x += makeRow(gbl.sums.curr[cur],{"sty":"summaryRow"}) + spaceRow(3);
 
 	x += spaceRow(5);
-	for(let i in gbl.sums.accts) x += makeRow(gbl.sums.accts[i]);
-	for(let i in gbl.sums.total) x += makeRow(gbl.sums.total[i],"dataRow2");
+
+	sorted_accts = Object.entries(gbl.sums.accts).sort((a, b) => a[0].localeCompare(b[0]));
+
+	for(let i in sorted_accts)
+		x += makeRow(gbl.sums.accts[sorted_accts[i][0]]);
+
+	for(let i in gbl.sums.total)
+		x += makeRow(gbl.sums.total[i],{"sty":"summaryRow"});
 
 	x += "</table>";
 	gbl.bot.innerHTML = x;
