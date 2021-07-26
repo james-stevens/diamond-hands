@@ -364,22 +364,32 @@ function valCell(val,def,cmp,sfx)
 
 function clickRow(ticker)
 {
-	if (("openTag" in ctx)&&(ctx.openTag != ticker)) {
-		x = document.getElementById(`blk_${ctx.openTag}`);
+	let old = "";
+
+	if ("block" in gbl) {
+		let x = gbl.block;
+		delete gbl.block
+		if (x == ticker) return;
+		}
+
+	if ("openTag" in ctx) {
+		old = ctx.openTag;
+		let x = document.getElementById(`blk_${ctx.openTag}`);
 		if (x) x.style.display = "none";
 		delete ctx.openTag;
 		}
 
-	x = document.getElementById(`blk_${ticker}`);
-	if (!x) return
-
-	if (x.style.display == "none") {
+	let x = document.getElementById(`blk_${ticker}`);
+	if ((x)&&(old != ticker)) {
 		x.style.display = "table-row-group";
 		ctx.openTag = ticker;
-	} else {
-		x.style.display = "none";
-		delete ctx.openTag;
-	}
+		}
+}
+
+
+function blockClicked(ticker)
+{
+	gbl.block = ticker;
 }
 
 
@@ -397,7 +407,7 @@ function makeRow(v,obj)
 	if ((obj)&&("tag" in obj)) x += `<td>${obj.tag}</td>`;
 	else {
 		if ((v.showPrice)&&(v.google))
-			x += `<td><a href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
+			x += `<td><a onClick="blockClicked('${v.name}');" href="https://www.google.com/finance/quote/${v.google}" target=_window>${v.name}</a></td>`;
 		else {
 			if (v.name == "GBP")
 				x += `<td><a href="https://www.google.com/finance/quote/GBP-USD" target=_window>${v.name}</a></td>`;
