@@ -46,4 +46,12 @@ sqlsh 'create view latest_values as
 		from spot_values
 		where batch < date(now()) group by 2,3
 		) vv 
-	on (v.batch=vv.batch and v.trade_id = vv.trade_id)'
+	on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
+\
+'create view total_value as
+	select date(batch) "date",sum(current_value_gbp) "total"
+	from trades
+	join spot_values using(trade_id)
+	where spot_values.end_of_day
+	group by 1
+'

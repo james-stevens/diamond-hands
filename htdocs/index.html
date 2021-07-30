@@ -1,6 +1,7 @@
 <!--- (c) Copyright 2019-2020, James Stevens ... see LICENSE for details --->
 <!--- Alternative license arrangements are possible, contact me for more information --->
 <html>
+<script src="/chart.min.js"></script>
 <script language="Javascript">
 	const debugAPI = false;
 </script>
@@ -159,7 +160,6 @@ td {
 
 .dataRowOff:hover { background-color: #666688; }
 
-
 .formPrompt {
 	font-family:Verdana,Arial,Helvetica,sans-serif;
 	font-size:10pt;
@@ -211,6 +211,18 @@ var gbl = {
 var ctx = { };
 
 var timers = [];
+
+var col_desc = {
+	"trade_id":null,
+	"when_dt":"When bought",
+	"quantity":"Number of shares",
+	"currency":"Currency",
+	"price":"Price paid",
+	"exchange_rate":"Exchange rate",
+	"total_cost_gbp":"Total cost (GBP)",
+	"account_held":"Holding Account",
+	":rowid:":null
+	};
 
 //=============================================================================================
 // Some library functions
@@ -315,6 +327,16 @@ function btn(call,txt,hlp,sz) {
 }
 
 
+function refreshRouter()
+{
+	if ("one_trade" in ctx) showOneTrade()
+	else {
+		displayTrades();
+		repeatUpdate();
+		}
+	topLine();
+}
+
 
 function updatePrices() {
 	delete gbl.trades;
@@ -337,11 +359,61 @@ function updatePrices() {
 
 		callApi("spot_prices",data => {
 			gbl.spot_prices = data.spot_prices;
-			displayTrades();
-			repeatUpdate();
+			refreshRouter();
 			}, { method: "POST", callErr: true, json: JSON.stringify(spot_price_qry) });
 
 		}, { method: "POST", callErr: true, json: JSON.stringify(trades_qry) });
+}
+
+
+
+function showTotalValue(data)
+{
+	ctx = { total: true };
+	gbl.totals = data.total_value;
+
+	gbl.bot.innerHTML = '<div><canvas id="my-chart" style="background: #ffffff"></canvas></div>'
+
+	my = { data: [], label: [] };
+	for (i in gbl.totals) {
+		my.data.push(gbl.totals[i].total);
+		my.label.push(gbl.totals[i].date);
+		}
+
+	let now = 0
+	for(i in gbl.trades) now += gbl.trades[i].spot_value_id.current_value_gbp;
+	my.data.push(now);
+	my.label.push("Now");
+
+	new Chart(document.getElementById("my-chart"), {
+		type: 'line',
+		data: {
+		labels: my.label,
+		datasets: [
+			{
+			label: "Portfolio Value",
+			data: my.data,
+			borderColor: "#c45850"
+			}
+		]
+		},
+		options: {
+			maintainAspectRatio: true,
+			responsive: true,
+			title: {
+			display: true,
+			text: 'Total Value'
+			}
+		}
+	});
+}
+
+
+
+function totalValue()
+{
+	cancelTimers();
+	callApi("total_value",data => { showTotalValue(data) } );
 }
 
 
@@ -366,10 +438,17 @@ function clickRow(ticker)
 {
 	let old = "";
 
+	if (ticker == "Total") return totalValue();
+
 	if ("block" in gbl) {
 		let x = gbl.block;
 		delete gbl.block
 		if (x == ticker) return;
+		}
+
+	if (ticker in gbl.trades) {
+		ctx.one_trade = ticker;
+		return refreshRouter();
 		}
 
 	if ("openTag" in ctx) {
@@ -447,7 +526,21 @@ function makeRow(v,obj)
 function numDays(dt) { return new Date(dt).getTime() / 1000 / 86400; }
 
 
-function summaryItem(items,name,t,showPrice)
+
+function showOneTrade()
+{
+	let this_trade = gbl.trades[ctx.one_trade];
+	x = "<table align=center>"
+	for(t in this_trade)
+		if ((!(typeof(this_trade[t]) == "object"))&&(col_desc[t] != null))
+			x = x + `<tr class=dataRow><td class=formPrompt>${col_desc[t]} : </td><td>${this_trade[t]}</td></tr>`;
+	x = x + "</table>"
+	gbl.bot.innerHTML = x;
+}
+
+
+
+function summaryItem(items,name,t,showPrice,singleTrade)
 {
 	let f = (t.currency=="GBP")?100:1;
 	if (!(name in items)) {
@@ -457,6 +550,7 @@ function summaryItem(items,name,t,showPrice)
 			day_price: t.eod_spot_value_id.current_price * f,
 			price: t.spot_value_id.current_price * f,
 			total_day_gain:0, count:0, num:0, native_cost:0, cost: 0, week:0, day:0, value: 0,
+			single_trade: singleTrade,
 			market_open: false,
 			showPrice: showPrice,
 			google: (showPrice)?t.ticker.google:null,
@@ -502,11 +596,11 @@ let batch_id = null;
 	for(let i in gbl.trades) {
 		let t = gbl.trades[i];
 		if (batch_id == null) batch_id = t.spot_value_id.batch;
-		summaryItem(gbl.sums.vals,t.ticker.ticker,t,true);
-		summaryItem(gbl.sums.accts,t.account_held,t,false);
-		summaryItem(gbl.sums.curr,t.currency,t,false);
-		summaryItem(gbl.sums.total,"Total",t,false);
-		summaryItem(gbl.sums.ones,t.trade_id,t,true);
+		summaryItem(gbl.sums.vals,t.ticker.ticker,t,true,false);
+		summaryItem(gbl.sums.accts,t.account_held,t,false,false);
+		summaryItem(gbl.sums.curr,t.currency,t,false,false);
+		summaryItem(gbl.sums.total,"Total",t,false,false);
+		summaryItem(gbl.sums.ones,i,t,true,true);
 		}
 
 	multiCur = (Object.keys(gbl.sums.curr).length > 1);
@@ -532,7 +626,12 @@ let batch_id = null;
 		x += `<tbody style="display: ${sty};" id="blk_${i}">`;
 		for(let tr in gbl.trades) {
 			if (gbl.trades[tr].ticker.ticker == i)
-				x += makeRow(gbl.sums.ones[gbl.trades[tr].trade_id],{ "sty":"subRow","tag":gbl.trades[tr].when_dt.substr(0,16) });
+				x += makeRow(gbl.sums.ones[tr],
+					{
+					"sty": "subRow",
+					"tag": gbl.trades[tr].when_dt.substr(0,16)
+					}
+				);
 			}
 		x += "</tbody>";
 		}
@@ -557,13 +656,23 @@ let batch_id = null;
 
 }
 
-function repeatUpdate()
+
+
+function cancelTimers()
 {
 let id=0;
 
 	while(id = timers.pop()) clearTimeout(id);
+}
+
+
+
+function repeatUpdate()
+{
+	cancelTimers();
 	timers.push(setTimeout(updatePrices,60000));
 }
+
 
 
 function setBatch(id)
@@ -571,6 +680,7 @@ function setBatch(id)
 	let m = document.getElementById("showBatch");
 	if (m) m.innerHTML = id;
 }
+
 
 
 function startUp()
@@ -647,13 +757,23 @@ function msg(myMsg,newClass)
 }
 
 
+function backToPrices()
+{
+	ctx = {}
+	updatePrices();
+}
+
 
 function topLine()
 {
     let y = "<table style='margin-top:10px;' border=0 cellspacing=0 cellpadding=0 width=100%><tr><td width=1 class=dataRow>"
         + `<font size=+1><a title='Open this page in a new window' target=_blank href='${window.origin}${gbl.pathname}?`;
 
-    let x = `'>${gbl.page}</a></font></td><td>` + btn("updatePrices()",gbl.server,"Reload Data");
+    let x = `'>${gbl.page}</a></font></td><td>` + btn("backToPrices()",gbl.server,"Reload Data");
+
+    if ("one_trade" in ctx)
+		x += btn("showOneTrade()",gbl.trades[ctx.one_trade].ticker.ticker + "/" + ctx.one_trade,"This Trade");
+
     x += "</td><td width=100% align=center><span class='fullvis' id='showMsg'></span></td>";
     x += "<td><div id='showBatch'></div></td>";
     x += "</tr><table><hr>";
@@ -678,8 +798,7 @@ function topLine()
 </table>
 </div>
 
-<div id="lowerSpan">
-</div>
+<div id="lowerSpan"></div>
 
 <div id=myMsgPop class='msgPop msgPopNo'></div>
 </body></html>
