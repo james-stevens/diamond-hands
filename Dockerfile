@@ -10,4 +10,4 @@ COPY crontab /etc/crontabs/root
 COPY 20-crond /etc/inittab.d
 
 COPY htpasswd /etc/nginx
-COPY htdocs/index.html /opt/htdocs
+COPY htdocs/* /opt/htdocs/

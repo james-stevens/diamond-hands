@@ -13,6 +13,14 @@
 .fadein  { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
 .fadeout { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
 
+canvas {margin-top:2%; margin-bottom:5%; margin-left:10%; margin-right:10%;}
+
+.graphDiv {
+	height: 70%;
+	width: 100%;
+	text-align: center;
+	}
+
 #topSpan{
 	background-color: #444466;
 	height: 55px;
@@ -372,7 +380,7 @@ function showTotalValue(data)
 	ctx = { total: true };
 	gbl.totals = data.total_value;
 
-	gbl.bot.innerHTML = '<div><canvas id="my-chart" style="background: #ffffff"></canvas></div>'
+	gbl.bot.innerHTML = '<div class="graphDiv"><canvas id="my-chart" style="background: #ffffff"></canvas></div>'
 
 	my = { data: [], label: [] };
 	for (i in gbl.totals) {
