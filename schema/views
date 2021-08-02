@@ -9,6 +9,7 @@ sqlsh 'create view latest_values as
 	on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
 \
 \
+'drop view if exists latest_rates' \
 'create view latest_rates as 
 	select r.* from spot_rates r join (
 		select max(batch) "batch",currency
@@ -17,6 +18,7 @@ sqlsh 'create view latest_values as
 	on (r.batch=rr.batch and r.currency=rr.currency)' \
 \
 \
+'drop view if exists end_of_day_value' \
 'create view end_of_day_value as
 	select v.* from spot_values v join (
 		select max(batch) "batch",trade_id,date(batch)
@@ -25,6 +27,7 @@ sqlsh 'create view latest_values as
 	) vv on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
 \
 \
+'drop view if exists end_of_week_value' \
 'create view end_of_week_value as
 	select v.* from spot_values v join (
 		select max(batch) "batch",trade_id,date(batch)
@@ -35,10 +38,12 @@ sqlsh 'create view latest_values as
 	on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
 \
 \
+'drop view if exists current_value' \
 'create view current_value as
 	select * from trades join spot_values using(spot_value_id,trade_id)' \
 \
 \
+'drop view if exists end_of_day' \
 'create view end_of_day as
 	select v.trade_id,date(v.batch),v.spot_value_id
 	from spot_values v join (
@@ -48,10 +53,28 @@ sqlsh 'create view latest_values as
 		) vv 
 	on (v.batch=vv.batch and v.trade_id = vv.trade_id)' \
 \
+'drop view if exists total_value' \
 'create view total_value as
 	select date(batch) "date",sum(current_value_gbp) "total"
 	from trades
 	join spot_values using(trade_id)
 	where spot_values.end_of_day
 	group by 1
-'
+' \
+\
+\
+'drop view if exists week_value' \
+'create view week_value as select 
+	v.batch "date",
+	sum(v.current_value_gbp) "total"
+	from trades t
+	join spot_values v using(trade_id)
+	join spot_prices p using(spot_price_id)
+	where v.batch > (
+		select max(batch)
+		from spot_values
+		where end_of_day
+		and dayofweek(batch)=1
+		)
+	group by 1
+	having count(*) >= (select count(*) from trades)'

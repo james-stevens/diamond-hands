@@ -375,12 +375,9 @@ function updatePrices() {
 
 
 
-function showTotalValue(data)
+function showGraph(data,title)
 {
-	ctx = { total: true };
-	gbl.totals = data.total_value;
-
-	gbl.bot.innerHTML = '<div class="graphDiv"><canvas id="my-chart" style="background: #ffffff"></canvas></div>'
+	gbl.totals = data;
 
 	my = { data: [], label: [] };
 	for (i in gbl.totals) {
@@ -399,7 +396,7 @@ function showTotalValue(data)
 		labels: my.label,
 		datasets: [
 			{
-			label: "Portfolio Value",
+			label: title,
 			data: my.data,
 			borderColor: "#c45850"
 			}
@@ -418,10 +415,28 @@ function showTotalValue(data)
 
 
 
-function totalValue()
+function graphMode()
 {
 	cancelTimers();
-	callApi("total_value",data => { showTotalValue(data) } );
+	ctx = { graphs: true };
+	topLine();
+	gbl.bot.innerHTML = '<div class="graphDiv"><canvas id="my-chart" style="background: #ffffff"></canvas></div>';
+}
+
+
+
+function totalGraph()
+{
+    graphMode()
+	callApi("total_value",data => { showGraph(data.total_value,"End of Day Value") } );
+}
+
+
+
+function weeklyGraph()
+{
+	graphMode()
+	callApi("week_value",data => { showGraph(data.week_value,"Running Weekly Value") } );
 }
 
 
@@ -446,7 +461,7 @@ function clickRow(ticker)
 {
 	let old = "";
 
-	if (ticker == "Total") return totalValue();
+	if (ticker == "Total") return totalGraph();
 
 	if ("block" in gbl) {
 		let x = gbl.block;
@@ -784,6 +799,9 @@ function topLine()
 
     x += "</td><td width=100% align=center><span class='fullvis' id='showMsg'></span></td>";
     x += "<td><div id='showBatch'></div></td>";
+
+	x += "<td>" + btn("weeklyGraph()","Weekly","Show weekly graph") + btn("totalGraph()","Total","Show total graph") + "</td>"
+
     x += "</tr><table><hr>";
 
     gbl.top.innerHTML = y + btoa(JSON.stringify(gbl.state)) + x;
