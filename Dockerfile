@@ -1,4 +1,4 @@
-FROM auto-skew-elle
+FROM jamesstevens/auto-skew-elle
 
 run apk add py3-requests
 
