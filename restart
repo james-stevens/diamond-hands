@@ -1,0 +1,4 @@
+#! /bin/sh
+
+id=$(ssh 192.168.1.90 "docker ps" | awk '{ if ($2=="diamond-hands") print $1 }')
+ssh 192.168.1.90 "/usr/local/root_bin/get_all ; sleep 5 ; docker stop ${id}"
