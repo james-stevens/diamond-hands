@@ -13,13 +13,19 @@
 .fadein  { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
 .fadeout { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
 
-canvas {margin-top:2%; margin-bottom:5%; margin-left:10%; margin-right:10%;}
-
-.graphDiv {
-	height: 70%;
-	width: 100%;
-	text-align: center;
+canvas {
+	margin-top:2%;
+	margin-bottom:5%;
+	margin-left:10%;
+	margin-right:10%;
+	border-radius: 20px;
+	padding: 10px;
+	padding-left: 20px;
+	padding-right: 20px;
+	box-shadow: 8px 8px #303030;
 	}
+
+.graphDiv { text-align: center; }
 
 #topSpan{
 	background-color: #444466;
@@ -398,7 +404,7 @@ function showGraph(data,title)
 			{
 			label: title,
 			data: my.data,
-			borderColor: "#c45850"
+			borderColor: "#ff8080"
 			}
 		]
 		},
@@ -828,4 +834,3 @@ function topLine()
 
 <div id=myMsgPop class='msgPop msgPopNo'></div>
 </body></html>
-
