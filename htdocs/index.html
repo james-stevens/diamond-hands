@@ -600,7 +600,7 @@ function summaryItem(items,name,t,showPrice,singleTrade)
 
 	itm.count++;
 	itm.num += t.quantity;
-	itm.native_cost += (itm.price * t.quantity);
+	itm.native_cost += (t.price * t.quantity);
 	itm.cost += t.total_cost_gbp;
 	itm.value += t.spot_value_id.current_value_gbp;
 	itm.week += t.eow_spot_value_id.current_value_gbp;
