@@ -388,7 +388,7 @@ function showGraph(data,title)
 	my = { data: [], label: [] };
 	for (i in gbl.totals) {
 		my.data.push(gbl.totals[i].total);
-		my.label.push(gbl.totals[i].date);
+		my.label.push(gbl.totals[i].when_dt);
 		}
 
 	let now = 0
@@ -434,7 +434,7 @@ function graphMode()
 function totalGraph()
 {
     graphMode()
-	callApi("total_value",data => { showGraph(data.total_value,"End of Day Value") } );
+	callApi("total_values",data => { showGraph(data.total_values,"End of Day Value") } );
 }
 
 
@@ -442,7 +442,7 @@ function totalGraph()
 function weeklyGraph()
 {
 	graphMode()
-	callApi("week_value",data => { showGraph(data.week_value,"Running Weekly Value") } );
+	callApi("week_values",data => { showGraph(data.week_values,"Running Weekly Value") } );
 }
 
 

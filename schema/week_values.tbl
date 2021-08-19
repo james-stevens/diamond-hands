@@ -1,0 +1,5 @@
+CREATE TABLE week_values (
+  when_dt datetime,
+  total decimal(20,6) not null DEFAULT 0,
+  PRIMARY KEY (when_dt)
+)

@@ -22,4 +22,8 @@ ${base}/pysqlsh 'update spot_values v join end_of_day eod using(spot_value_id)
 \
 	'delete from spot_prices
 		where spot_price_id not in (select spot_price_id from spot_values)
-		and spot_price_id not in (select spot_price_id from spot_rates)'
+		and spot_price_id not in (select spot_price_id from spot_rates)' \
+\
+	'insert into total_values (
+		select * from total_value where when_dt not in (select when_dt from total_values)
+		)'

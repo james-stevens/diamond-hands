@@ -55,7 +55,7 @@ sqlsh 'create view latest_values as
 \
 'drop view if exists total_value' \
 'create view total_value as
-	select date(batch) "date",sum(current_value_gbp) "total"
+	select date(batch) "when_dt",sum(current_value_gbp) "total"
 	from trades
 	join spot_values using(trade_id)
 	where spot_values.end_of_day
@@ -65,7 +65,7 @@ sqlsh 'create view latest_values as
 \
 'drop view if exists week_value' \
 'create view week_value as select 
-	v.batch "date",
+	v.batch "when_dt",
 	sum(v.current_value_gbp) "total"
 	from trades t
 	join spot_values v using(trade_id)
