@@ -77,4 +77,12 @@ sqlsh 'create view latest_values as
 		and dayofweek(batch)=1
 		)
 	group by 1
-	having count(*) >= (select count(*) from trades)'
+	having count(*) >= (select count(*) from trades)' \
+\
+\
+\
+'drop view if exists price_rates' \
+'create view price_rates as 
+	select p.currency,p.batch,p.ticker,p.when_dt,p.price,p.spot_price_id,p.market_state,r.exchange_rate,r.spot_rate_id
+	from spot_prices p
+	join spot_rates r using(currency,batch)'
