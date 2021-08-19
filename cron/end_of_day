@@ -26,4 +26,6 @@ ${base}/pysqlsh 'update spot_values v join end_of_day eod using(spot_value_id)
 \
 	'insert into total_values (
 		select * from total_value where when_dt not in (select when_dt from total_values)
-		)'
+		)' \
+\
+	'delete from week_values where datediff(now(),when_dt) > 7'
