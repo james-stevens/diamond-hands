@@ -488,6 +488,68 @@ function pieChart(my)
 
 
 
+function pieByWeek()
+{
+	graphMode('pieCanvas')
+
+	let my = { data: [], label: [] };
+
+	direction = 0; tot = 0;
+	for(let i in gbl.sums.vals) direction += (gbl.sums.vals[i].value - gbl.sums.vals[i].week);
+	for(let i in gbl.sums.vals) {
+		t = gbl.sums.vals[i];
+		if ((direction > 0)&&(t.value > t.week)) tot += (t.value - t.week);
+		if ((direction < 0)&&(t.value < t.week)) tot += (t.week - t.value);
+		}
+
+	for(let i in gbl.sums.vals) {
+		t = gbl.sums.vals[i];
+		if ((direction > 0)&&(t.value > t.week)) {
+			my.data.push(((t.value-t.week)/tot)*100);
+			my.label.push(t.name);
+			}
+		if ((direction < 0)&&(t.value < t.week)) {
+			my.data.push(((t.week-t.value)/tot)*100);
+			my.label.push(t.name);
+			}
+		}
+
+	pieChart(my)
+}
+
+
+
+function pieByToday()
+{
+	graphMode('pieCanvas')
+
+	let my = { data: [], label: [] };
+
+	direction = 0; tot = 0;
+	for(let i in gbl.sums.vals) direction += (gbl.sums.vals[i].value - gbl.sums.vals[i].day);
+	for(let i in gbl.sums.vals) {
+		t = gbl.sums.vals[i];
+		if ((direction > 0)&&(t.value > t.day)) tot += (t.value - t.day);
+		if ((direction < 0)&&(t.value < t.day)) tot += (t.day - t.value);
+		}
+
+	for(let i in gbl.sums.vals) {
+		t = gbl.sums.vals[i];
+		if ((direction > 0)&&(t.value > t.day)) {
+			my.data.push(((t.value-t.day)/tot)*100);
+			my.label.push(t.name);
+			}
+		if ((direction < 0)&&(t.value < t.day)) {
+			my.data.push(((t.day-t.value)/tot)*100);
+			my.label.push(t.name);
+			}
+		}
+
+	pieChart(my)
+}
+
+
+
 function pieByHolding()
 {
 	graphMode('pieCanvas')
@@ -912,11 +974,13 @@ function topLine()
     x += "<td><div id='showBatch'></div></td>";
 
 	x += "<td>" 
+		+ btn("pieByWeek()","Week","Show Pie of changes this week")
+		+ btn("pieByToday()","Today","Show Pie of changes today")
 		+ btn("pieByHolding()","Balance","Show Pie by Current Value")
 		+ btn("pieByGain()","Gain","Show pie by Gain")
 		+ btn("pieByCost()","Cost","Show pie by Cost")
-		+ btn("weeklyGraph()","Weekly","Show weekly graph")
-		+ btn("totalGraph()","Total","Show total graph")
+		+ btn("weeklyGraph()","7-Day","Show weekly graph")
+		+ btn("totalGraph()","All Time","Show total graph")
 		+ "</td>"
 
     x += "</tr><table><hr>";
