@@ -2,6 +2,7 @@
 <!--- Alternative license arrangements are possible, contact me for more information --->
 <html>
 <script src="/chart.min.js"></script>
+<script src="/palette.js"></script>
 <script language="Javascript">
 	const debugAPI = false;
 </script>
@@ -13,7 +14,18 @@
 .fadein  { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: visible; opacity: 1; transition: opacity 0.5s linear; }
 .fadeout { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:14pt; visibility: hidden; opacity: 0; transition: visibility 0s 1s, opacity 1s linear; }
 
-canvas {
+#pieCanvas {
+	margin-top:2%;
+	margin-bottom:5%;
+	margin-left:30%;
+	margin-right:30%;
+	border-radius: 20px;
+	padding: 10px;
+	padding-left: 20px;
+	padding-right: 20px;
+	box-shadow: 8px 8px #303030;
+	}
+#lineCanvas {
 	margin-top:2%;
 	margin-bottom:5%;
 	margin-left:10%;
@@ -381,14 +393,12 @@ function updatePrices() {
 
 
 
-function showGraph(data,title)
+function lineGraph(data,title)
 {
-	gbl.totals = data;
-
-	my = { data: [], label: [] };
-	for (i in gbl.totals) {
-		my.data.push(gbl.totals[i].total);
-		my.label.push(gbl.totals[i].when_dt);
+	let my = { data: [], label: [] };
+	for (i in data) {
+		my.data.push(data[i].total);
+		my.label.push(data[i].when_dt);
 		}
 
 	let now = 0
@@ -396,7 +406,7 @@ function showGraph(data,title)
 	my.data.push(now);
 	my.label.push("Now");
 
-	new Chart(document.getElementById("my-chart"), {
+	new Chart(document.getElementById("lineCanvas"), {
 		type: 'line',
 		data: {
 		labels: my.label,
@@ -421,28 +431,123 @@ function showGraph(data,title)
 
 
 
-function graphMode()
+function graphMode(name)
 {
 	cancelTimers();
 	ctx = { graphs: true };
 	topLine();
-	gbl.bot.innerHTML = '<div class="graphDiv"><canvas id="my-chart" style="background: #ffffff"></canvas></div>';
+	gbl.bot.innerHTML = '<div class="graphDiv"><canvas id="'+name+'" style="background: #ffffff"></canvas></div>';
 }
 
 
 
 function totalGraph()
 {
-    graphMode()
-	callApi("total_values",data => { showGraph(data.total_values,"End of Day Value") } );
+    graphMode('lineCanvas')
+	callApi("total_values",data => { lineGraph(data.total_values,"End of Day Value") } );
 }
 
 
 
 function weeklyGraph()
 {
-	graphMode()
-	callApi("week_values",data => { showGraph(data.week_values,"Running Weekly Value") } );
+	graphMode('lineCanvas')
+	callApi("week_values",data => { lineGraph(data.week_values,"Running Weekly Value") } );
+}
+
+
+function pieChart(my)
+{
+	sel = "mpn65";
+	if (my.data.length > 65) sel = "tol-rainbow";
+	cols = []
+	for(i of palette(sel, my.data.length)) cols.push("#"+i);
+
+	new Chart(document.getElementById("pieCanvas"), {
+		type: 'pie',
+		data: {
+		  labels: my.label,
+		  datasets: [{
+			label: "Population (millions)",
+			backgroundColor: cols,
+			data: my.data,
+			borderRadius: 5,
+			hoverOffset: 30,
+			weight: 20,
+			offset: 5,
+		  }]
+		},
+		options: {
+		  title: {
+			display: true,
+			text: 'some text'
+		  }
+		}
+	});
+}
+
+
+
+function pieByHolding()
+{
+	graphMode('pieCanvas')
+
+	let my = { data: [], label: [] };
+
+	tot = 0;
+	for(let i in gbl.sums.vals) tot += gbl.sums.vals[i].value;
+
+	for(let i in gbl.sums.vals) {
+		t = gbl.sums.vals[i];
+		my.data.push((t.value/tot)*100);
+		my.label.push(t.name);
+		}
+
+	pieChart(my)
+}
+
+
+
+function pieByCost()
+{
+	graphMode('pieCanvas')
+
+	let my = { data: [], label: [] };
+
+	tot = 0;
+	for(let i in gbl.sums.vals) tot += gbl.sums.vals[i].cost;
+
+	for(let i in gbl.sums.vals) {
+		t = gbl.sums.vals[i];
+		my.data.push((t.cost/tot)*100);
+		my.label.push(t.name);
+		}
+
+	pieChart(my)
+}
+
+
+
+function pieByGain()
+{
+	graphMode('pieCanvas')
+
+	let my = { data: [], label: [] };
+
+	tot = 0;
+	for(let i in gbl.sums.vals) 
+		if (gbl.sums.vals[i].value > gbl.sums.vals[i].cost)
+			tot += (gbl.sums.vals[i].cost - gbl.sums.vals[i].value);
+
+	for(let i in gbl.sums.vals) {
+		t = gbl.sums.vals[i];
+		if (t.cost < t.value) {
+			my.data.push(((t.cost - t.value)/tot)*100);
+			my.label.push(t.name);
+			}
+		}
+
+	pieChart(my)
 }
 
 
@@ -806,7 +911,13 @@ function topLine()
     x += "</td><td width=100% align=center><span class='fullvis' id='showMsg'></span></td>";
     x += "<td><div id='showBatch'></div></td>";
 
-	x += "<td>" + btn("weeklyGraph()","Weekly","Show weekly graph") + btn("totalGraph()","Total","Show total graph") + "</td>"
+	x += "<td>" 
+		+ btn("pieByHolding()","Balance","Show Pie by Current Value")
+		+ btn("pieByGain()","Gain","Show pie by Gain")
+		+ btn("pieByCost()","Cost","Show pie by Cost")
+		+ btn("weeklyGraph()","Weekly","Show weekly graph")
+		+ btn("totalGraph()","Total","Show total graph")
+		+ "</td>"
 
     x += "</tr><table><hr>";
 
