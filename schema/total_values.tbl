@@ -1,5 +1,5 @@
-CREATE TABLE total_values (
-  when_dt date,
-  total decimal(20,6) not null DEFAULT 0,
-  PRIMARY KEY (when_dt)
-)
+CREATE TABLE `total_values` (
+  `when_dt` date NOT NULL,
+  `total` decimal(20,6) NOT NULL DEFAULT 0.000000,
+  PRIMARY KEY (`when_dt`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1

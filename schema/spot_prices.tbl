@@ -4,8 +4,8 @@ CREATE TABLE `spot_prices` (
   `price` decimal(10,5) DEFAULT NULL,
   `currency` char(5) DEFAULT NULL,
   `batch` datetime NOT NULL,
-  `spot_price_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `spot_price_id` int(20) unsigned NOT NULL AUTO_INCREMENT,
   `market_state` char(10) DEFAULT NULL,
   PRIMARY KEY (`ticker`,`batch`),
   UNIQUE KEY `spot_price_id` (`spot_price_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23607 DEFAULT CHARSET=latin1
+) ENGINE=InnoDB AUTO_INCREMENT=732393 DEFAULT CHARSET=latin1

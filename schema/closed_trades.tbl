@@ -14,4 +14,4 @@ CREATE TABLE `closed_trades` (
   `sold_gbp` decimal(10,5) DEFAULT NULL,
   `sold_when_dt` datetime DEFAULT NULL,
   PRIMARY KEY (`closed_trade_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=latin1
+) ENGINE=InnoDB AUTO_INCREMENT=277 DEFAULT CHARSET=latin1

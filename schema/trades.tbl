@@ -8,7 +8,8 @@ CREATE TABLE `trades` (
   `exchange_rate` decimal(10,5) DEFAULT NULL,
   `total_cost_gbp` decimal(10,5) DEFAULT NULL,
   `account_held` char(25) DEFAULT NULL,
-  `spot_value_id` int(10) unsigned DEFAULT NULL,
-  `eod_spot_value_id` int(10) unsigned DEFAULT NULL,
+  `spot_value_id` int(20) unsigned DEFAULT NULL,
+  `eod_spot_value_id` int(20) unsigned DEFAULT NULL,
+  `eow_spot_value_id` int(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`trade_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=latin1
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=latin1

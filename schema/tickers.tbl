@@ -1,5 +1,5 @@
 CREATE TABLE `tickers` (
-  `ticker` char(20) NOT NULL default "",
-  `google` varchar(50) NOT NULL default "",
+  `ticker` char(20) NOT NULL,
+  `google` varchar(50) NOT NULL DEFAULT '',
   PRIMARY KEY (`ticker`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1
