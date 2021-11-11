@@ -15,3 +15,7 @@ ${base}/pysqlsh 'insert into tickers(ticker)
 	where currency != "GBP"
 	and concat("GBP",currency,"=X") not in
 		(select ticker from tickers)'
+\
+	'delete from tickers
+		where ticker not in (select ticker from trades)
+		and ticker not like "%=X"'
