@@ -28,6 +28,11 @@ ${base}/pysqlsh 'insert into spot_rates
 		where s.spot_price_id not in (select spot_price_id from spot_values)' \
  \
  \
-	'update trades t join latest_values vv using(trade_id) set t.spot_value_id = vv.spot_value_id' \
+	'update trades t join latest_values vv using(trade_id)
+		set t.spot_value_id = vv.spot_value_id' \
  \
-	'insert into week_values (select * from week_value where when_dt not in (select when_dt from week_values))'
+	'insert into week_values (select * from week_value
+		where when_dt not in (select when_dt from week_values))' \
+\
+	'update trades set eod_spot_value_id=spot_value_id,eow_spot_value_id=spot_value_id
+		where eod_spot_value_id = 0 and eow_spot_value_id = 0'
