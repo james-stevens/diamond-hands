@@ -8,12 +8,15 @@ if test -f /usr/local/etc/stocks.login
 base="/usr/local/diamond-hands"
 
 {
-if test "$1" = "EOD"
+if test -f /tmp/new_day
 	then
 		${base}/end_of_day
-	else
-		${base}/pre-get_prices
-		${base}/get_price
-		${base}/update_batches
 	fi
+
+${base}/pre-get_prices
+${base}/get_price
+${base}/update_batches
+
+rm -f /tmp/new_day
+
 } 2>&1 | ${base}/pylogger -i -t get_price -f local0
