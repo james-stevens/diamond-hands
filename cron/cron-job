@@ -8,14 +8,14 @@ if test -f /usr/local/etc/stocks.login
 base="/usr/local/diamond-hands"
 
 {
+${base}/pre-get_prices
+${base}/get_price
+${base}/update_batches
+
 if test -f /tmp/new_day
 	then
 		${base}/end_of_day
 	fi
-
-${base}/pre-get_prices
-${base}/get_price
-${base}/update_batches
 
 rm -f /tmp/new_day
 
