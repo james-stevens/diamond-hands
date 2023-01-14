@@ -8,6 +8,8 @@ if test -f /usr/local/etc/stocks.login
 base="/usr/local/diamond-hands"
 
 {
+cd ${base}
+export export PYTHONPATH=${base}
 ${base}/pre-get_prices
 ${base}/get_price
 ${base}/update_batches

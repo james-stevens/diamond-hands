@@ -13,6 +13,9 @@ from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
+import localyf as yf
+
+
 parser = argparse.ArgumentParser(description='Get price from yahoo web')
 parser.add_argument("-t", '--ticker', help='Ticker to pull in')
 parser.add_argument("-D",
@@ -78,45 +81,27 @@ def mysql_connect():
 
 
 def get_prices(ticker):
-    """ Request price for {ticker} from Yahoo Finance """
-    url = "https://finance.yahoo.com/quote/" + ticker + "/"
-    headers = {
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-        }
-    response = requests.request("GET", url,headers=headers)
-
-    js = None
-    try:
-        for line in response.text.split("\n"):
-            if line[:13] == "root.App.main":
-                js = json.loads(line[line.find("{"):-1])
-
-        if js is None:
-            return None
-
-        return js["context"]["dispatcher"]["stores"]["StreamDataStore"][
-            "quoteData"]
-    except Exception as e:
-        return None
-
+    tick = yf.Ticker(ticker)
+    info = tick.info
+    print(tick._quote.all)
+    return tick._quote._all["StreamDataStore"]["quoteData"]
 
 def get_val_dtm(price):
     """ Extract numeric price & time stamp from {price} object """
-    val = price["regularMarketPrice"]["raw"]
-    if price["currency"] == "GBp" and val > 5:
+    val = price["regularMarketPrice"]
+    if "currency" in price and price["currency"] == "GBp" and val > 5:
         val = val / 100
         price["currency"] = "GBP"
 
     dtm = datetime.utcfromtimestamp(
-        price["regularMarketTime"]["raw"]).strftime('%Y-%m-%d %H:%M:%S')
+        price["regularMarketTime"]).strftime('%Y-%m-%d %H:%M:%S')
     return val, dtm
 
 
 if args.ticker is not None:
     js = get_prices(args.ticker)
-    if args.ticker in js:
-        print(json.dumps(js[args.ticker], indent=3))
-        print(get_val_dtm(js[args.ticker]))
+    for ticker in js:
+        print(ticker,get_val_dtm(js[ticker]),have_required_fields(js[ticker]))
     sys.exit(0)
 
 cnx = mysql_connect()
