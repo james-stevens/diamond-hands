@@ -83,7 +83,6 @@ def mysql_connect():
 def get_prices(ticker):
     tick = yf.Ticker(ticker)
     info = tick.info
-    print(tick._quote.all)
     return tick._quote._all["StreamDataStore"]["quoteData"]
 
 def get_val_dtm(price):
