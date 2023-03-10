@@ -5,6 +5,6 @@ echo "https://alpdev.jrcs.net:800/"
 echo ""
 
 docker run --read-only -it \
-	-v /opt/pems:/opt/pems \
+	-v /opt/jrcs:/opt/pems \
 	--env-file /usr/local/etc/autosql.env \
 	-p 800:443 diamond-hands $*

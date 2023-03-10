@@ -3,6 +3,7 @@
 import requests
 import json
 import time
+import random
 import sys
 import os
 import collections
@@ -13,10 +14,10 @@ from MySQLdb import _mysql
 from MySQLdb.constants import FIELD_TYPE
 import MySQLdb.converters
 
-import localyf as yf
-
+from yahooquery import Ticker
 
 parser = argparse.ArgumentParser(description='Get price from yahoo web')
+parser.add_argument("-v", '--verbose', action="store_true")
 parser.add_argument("-t", '--ticker', help='Ticker to pull in')
 parser.add_argument("-D",
                     '--debug',
@@ -81,9 +82,12 @@ def mysql_connect():
 
 
 def get_prices(ticker):
-    tick = yf.Ticker(ticker)
-    info = tick.info
-    return tick._quote._all["StreamDataStore"]["quoteData"]
+    try:
+        tickers = Ticker(ticker)
+        return tickers.quotes
+    except Exception as exc:
+        return None
+    return None
 
 def get_val_dtm(price):
     """ Extract numeric price & time stamp from {price} object """
@@ -98,54 +102,91 @@ def get_val_dtm(price):
 
 
 if args.ticker is not None:
-    js = get_prices(args.ticker)
-    for ticker in js:
-        print(ticker,get_val_dtm(js[ticker]),have_required_fields(js[ticker]))
+    store = get_prices(args.ticker)
+    for ticker in store:
+        print(ticker,get_val_dtm(store[ticker]),have_required_fields(store[ticker]))
+    if args.verbose and args.ticker in store:
+        print(json.dumps(store[args.ticker],indent=3))
     sys.exit(0)
+
+
+class OneTicker:
+    def __init__(self,ticker):
+        self.ticker = ticker.upper()
+        self.next_update = None
+        self.price = None
+        self.source = None
+        self.schedule_next()
+
+    def get_latest_prices(self):
+        prices = get_prices(self.ticker)
+        if prices is not None and self.ticker in prices and have_required_fields(prices[self.ticker]):
+            self.schedule_next()
+            self.prices = prices
+            return True
+
+        self.update_failed()
+        return False
+
+    def update_failed(self):
+        self.next_update = int(time.time()) + random.randint(5,10)
+
+    def found_price(self,price,source):
+        self.price = price
+        self.source = source
+        self.next_update = int(time.time()) + 999999
+
+    def schedule_next(self):
+        self.next_update = int(time.time()) + random.randint(5,45)
+
+
+def find_next(tickers):
+    lowest = tickers[list(tickers)[0]]
+    now = int(time.time())
+    for __, tickobj in tickers.items():
+        if tickobj.next_update < lowest.next_update:
+            lowest = tickobj
+    return lowest if lowest.next_update < now else None
+
+
+def record_price(ticker,this_price):
+    val, dtm = get_val_dtm(this_price)
+    log_line = f"[{ticker}] -> {dtm} -> {val} -> {this_price['currency']} {this_price['marketState']}"
+    print(log_line)
+    sys.stdout.flush()
+
+    sql = "insert into spot_prices(batch,ticker,when_dt,price,currency,market_state)"
+    sql = sql + f"values('{batch}','{ticker}','{dtm}',{val},'{this_price['currency']}','{this_price['marketState']}')"
+
+    if not args.debug:
+        cnx.query(sql)
+    else:
+        print(sql)
+
 
 cnx = mysql_connect()
 
 cnx.query("select ticker from tickers")
 res = cnx.store_result()
 ret = res.fetch_row(maxrows=0, how=1)
-tickers = {t["ticker"]: None for t in ret}
+
+tick_list = [ t["ticker"].upper() for t in ret ]
 
 batch = datetime.utcfromtimestamp(int(
     time.time())).strftime('%Y-%m-%d %H:%M:%S')
 
-for ticker in [t for t in tickers]:
-    if tickers[ticker] is not None:
-        continue
+tickers = Ticker(tick_list)
+for each_tick in tick_list:
+	if have_required_fields(tickers.quotes[each_tick]):
+		record_price(each_tick,tickers.quotes[each_tick])
 
-    prices = get_prices(ticker)
-    if prices is None:
-        prices = get_prices(ticker)
+sys.exit(0)
 
-    for price in prices:
-        if price not in tickers or tickers[price] is not None:
-            continue
-
-        if not have_required_fields(prices[price]):
-            continue
-
-        this_price = prices[price]
-        tickers[price] = this_price
-
-        val, dtm = get_val_dtm(this_price)
-        print("[", ticker, "] ->", price, "->", dtm, "->", val, "->",
-              this_price["currency"], this_price["marketState"])
-        sys.stdout.flush()
-
-        sql = "insert into spot_prices(batch,ticker,when_dt,price,currency,market_state)"
-        sql = sql + "values(\"{batch}\",\"{ticker}\",\"{datetime}\",{price},\"{cur}\",\"{mktopen}\")".format(
-            batch=batch,
-            ticker=price,
-            datetime=dtm,
-            price=val,
-            cur=this_price["currency"],
-            mktopen=this_price["marketState"])
-
-        if not args.debug:
-            cnx.query(sql)
-
-cnx.close()
+while number_left() > 0:
+    next_to_update = find_next(tickers)
+    if next_to_update is not None and next_to_update.get_latest_prices():
+        for priced_item in next_to_update.prices:
+            if priced_item in tickers and tickers[priced_item].price is None and have_required_fields(next_to_update.prices[priced_item]):
+                tickers[priced_item].found_price(next_to_update.prices[priced_item],next_to_update.ticker)
+                record_price(priced_item,next_to_update.ticker,next_to_update.prices[priced_item])
+    time.sleep(3)

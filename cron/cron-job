@@ -8,6 +8,7 @@ if test -f /usr/local/etc/stocks.login
 base="/usr/local/diamond-hands"
 
 {
+echo "START"
 cd ${base}
 export PYTHONPATH=${base}
 ${base}/pre-get_prices
@@ -21,4 +22,5 @@ if test -f /tmp/new_day
 
 rm -f /tmp/new_day
 
+echo "DONE"
 } 2>&1 | ${base}/pylogger -i -t get_price -f local0
