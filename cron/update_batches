@@ -20,8 +20,8 @@ ${base}/pysqlsh 'insert into spot_rates
 		)' \
  \
  \
-	'insert into spot_values(trade_id,batch,current_price,current_exchange_rate,current_value_gbp,spot_price_id,spot_value_id)
-		select t.trade_id,s.batch,s.price,r.exchange_rate,(s.price*t.quantity)/r.exchange_rate,s.spot_price_id,NULL
+	'insert into spot_values(trade_id,batch,current_price,current_exchange_rate,current_value_gbp,spot_price_id,spot_value_id,end_of_day)
+		select t.trade_id,s.batch,s.price,r.exchange_rate,(s.price*t.quantity)/r.exchange_rate,s.spot_price_id,NULL,0
 		from trades t
 		join spot_prices s on(t.ticker=s.ticker and t.currency=s.currency)
 		join spot_rates r on(s.currency=r.currency and s.batch = r.batch)

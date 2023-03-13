@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import sys
+import json
 import os
 
 import MySQLdb as mdb
@@ -55,9 +56,12 @@ def mysql_connect():
 cnx = mysql_connect()
 cursor = cnx.cursor()
 
-del sys.argv[0]
-for sql in sys.argv:
-	cursor.execute(sql)
-	cnx.commit()
+for sql in sys.argv[1:]:
+    cnx.query(sql)
+    if (res := cnx.store_result()) is not None:
+        db_rows = res.fetch_row(maxrows=0, how=1)
+        print(json.dumps(db_rows,indent=3))
+    else:
+        cnx.commit()
 
 cnx.close()

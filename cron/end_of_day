@@ -5,24 +5,25 @@ base="/usr/local/diamond-hands"
 echo "EndOfDay"
 
 ${base}/pysqlsh 'update spot_values v join end_of_day eod using(spot_value_id)
-	set v.end_of_day = 1 where v.end_of_day is NULL' \
-\
-	'update spot_values set end_of_day = 0 where end_of_day is NULL and batch < date(now())' \
+	set v.end_of_day = 1 where (v.end_of_day is NULL or not v.end_of_day) '\
 \
 	'update trades t join end_of_day_value v using(trade_id) set t.eod_spot_value_id = v.spot_value_id' \
 	'update trades t join end_of_week_value v using(trade_id) set t.eow_spot_value_id = v.spot_value_id' \
 \
 	'delete from spot_values
-		where not end_of_day
+		where (not end_of_day or end_of_day is NULL)
 		and batch < date_sub(now(),interval 1 week)' \
 \
 	'delete from spot_rates
 		where batch < date_sub(now(),interval 1 week)
 		and batch not in (select batch from spot_values)' \
 \
-	'delete from spot_prices
-		where spot_price_id not in (select spot_price_id from spot_values)
-		and spot_price_id not in (select spot_price_id from spot_rates)' \
+	'create temporary table tmp.more_ids ( spot_price_id int unsigned )' \
+	'insert into tmp.more_ids select distinct spot_price_id from spot_values where spot_price_id is not null' \
+	'insert into tmp.more_ids select distinct spot_price_id from spot_rates where spot_price_id is not null' \
+	'create temporary table tmp.all_ids ( spot_price_id int unsigned , primary key (spot_price_id))' \
+	'insert into tmp.all_ids select distinct spot_price_id from tmp.more_ids' \
+	'delete from spot_prices where spot_price_id not in (select spot_price_id from tmp.all_ids)' \
 \
 	'insert into total_values (
 		select * from total_value where when_dt not in (select when_dt from total_values)
