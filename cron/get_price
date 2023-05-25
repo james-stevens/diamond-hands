@@ -84,8 +84,9 @@ def mysql_connect():
 def get_prices(ticker):
     try:
         tickers = Ticker(ticker)
-        return tickers.quotes
+        return tickers.price
     except Exception as exc:
+        print(f"ERROR: {exc}")
         return None
     return None
 
@@ -96,8 +97,7 @@ def get_val_dtm(price):
         val = val / 100
         price["currency"] = "GBP"
 
-    dtm = datetime.utcfromtimestamp(
-        price["regularMarketTime"]).strftime('%Y-%m-%d %H:%M:%S')
+    dtm = price["regularMarketTime"]
     return val, dtm
 
 
@@ -175,18 +175,8 @@ tick_list = [ t["ticker"].upper() for t in ret ]
 batch = datetime.utcfromtimestamp(int(
     time.time())).strftime('%Y-%m-%d %H:%M:%S')
 
-tickers = Ticker(tick_list)
+tickers = get_prices(tick_list)
+
 for each_tick in tick_list:
-	if have_required_fields(tickers.quotes[each_tick]):
-		record_price(each_tick,tickers.quotes[each_tick])
-
-sys.exit(0)
-
-while number_left() > 0:
-    next_to_update = find_next(tickers)
-    if next_to_update is not None and next_to_update.get_latest_prices():
-        for priced_item in next_to_update.prices:
-            if priced_item in tickers and tickers[priced_item].price is None and have_required_fields(next_to_update.prices[priced_item]):
-                tickers[priced_item].found_price(next_to_update.prices[priced_item],next_to_update.ticker)
-                record_price(priced_item,next_to_update.ticker,next_to_update.prices[priced_item])
-    time.sleep(3)
+    if have_required_fields(tickers[each_tick]):
+        record_price(each_tick,tickers[each_tick])
