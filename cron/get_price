@@ -171,11 +171,10 @@ res = cnx.store_result()
 ret = res.fetch_row(maxrows=0, how=1)
 
 tick_list = [ t["ticker"].upper() for t in ret ]
+tickers = get_prices(tick_list)
 
 batch = datetime.utcfromtimestamp(int(
     time.time())).strftime('%Y-%m-%d %H:%M:%S')
-
-tickers = get_prices(tick_list)
 
 for each_tick in tick_list:
     if have_required_fields(tickers[each_tick]):
