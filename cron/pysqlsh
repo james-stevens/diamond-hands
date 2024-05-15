@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 
 import sys
-import json
 import os
 
 import MySQLdb as mdb
@@ -21,6 +20,15 @@ my_conv[FIELD_TYPE.VARCHAR] = convert_string
 my_conv[FIELD_TYPE.CHAR] = convert_string
 my_conv[FIELD_TYPE.STRING] = convert_string
 my_conv[FIELD_TYPE.VAR_STRING] = convert_string
+my_conv[FIELD_TYPE.DATETIME] = convert_string
+my_conv[FIELD_TYPE.JSON] = convert_string
+my_conv[FIELD_TYPE.TINY_BLOB] = convert_string
+my_conv[FIELD_TYPE.MEDIUM_BLOB] = convert_string
+my_conv[FIELD_TYPE.LONG_BLOB] = convert_string
+my_conv[FIELD_TYPE.BLOB] = convert_string
+my_conv[FIELD_TYPE.TINY] = convert_string
+my_conv[FIELD_TYPE.DECIMAL] = convert_string
+my_conv[FIELD_TYPE.NEWDECIMAL] = convert_string
 
 
 def mysql_connect():
@@ -60,7 +68,9 @@ for sql in sys.argv[1:]:
     cnx.query(sql)
     if (res := cnx.store_result()) is not None:
         db_rows = res.fetch_row(maxrows=0, how=1)
-        print(json.dumps(db_rows,indent=3))
+        for row in db_rows:
+           print("".join([ str(row[col]) for col in row]))
+        ## print(json.dumps(db_rows,indent=3))
     else:
         cnx.commit()
 

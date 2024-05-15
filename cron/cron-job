@@ -14,6 +14,10 @@ export PYTHONPATH=${base}
 ${base}/pre-get_prices
 ${base}/get_price
 ${base}/update_batches
+if test -d /opt/prom/.
+	then
+		${base}/make_prom_file > /opt/prom/trades.prom
+	fi
 
 if test -f /tmp/new_day
 	then

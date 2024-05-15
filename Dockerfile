@@ -2,6 +2,7 @@ FROM jamesstevens/auto-skew-elle
 
 RUN apk add py3-requests py3-pandas py3-pip py3-requests-futures py3-tqdm
 RUN pip install yahooquery
+RUN pip install yahooquery --upgrade
 
 RUN mkdir -p /usr/local/diamond-hands
 COPY cron /usr/local/diamond-hands/

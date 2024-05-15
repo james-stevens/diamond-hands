@@ -1,0 +1,30 @@
+#! /bin/sh
+
+base="/usr/local/diamond-hands"
+
+${base}/pysqlsh 'select trade_id,account_held,v.ticker,current_value_gbp,market_state from current_value v join spot_prices using(spot_price_id)' | \
+awk -F'' 'BEGIN {
+	print "# HELP trade_current_value_gbp Trade current value in GBP"
+	print "# TYPE trade_current_value_gbp gauge"
+	}
+	{
+	printf "trade_current_value_gbp{account=\"%s\",ticker=\"%s\",trade_id=\"%s\",market=\"%s\"} %s\n",$2,$3,$1,$5,$4
+	}'
+
+${base}/pysqlsh 'select trade_id,account_held,v.ticker,quantity,market_state  from current_value v join spot_prices using(spot_price_id)' | \
+awk -F'' 'BEGIN {
+	print "# HELP trade_quantity Shares bougth in this trade"
+	print "# TYPE trade_quantity gauge"
+	}
+	{
+	printf "trade_quantity{account=\"%s\",ticker=\"%s\",trade_id=\"%s\",market=\"%s\"} %s\n",$2,$3,$1,$5,$4
+	}'
+
+${base}/pysqlsh 'select trade_id,account_held,v.ticker,(current_value_gbp - total_cost_gbp),market_state from current_value v join spot_prices using(spot_price_id)' | \
+awk -F'' 'BEGIN {
+	print "# HELP trade_profit Profit from this trade"
+	print "# TYPE trade_profit gauge"
+	}
+	{
+	printf "trade_profit{account=\"%s\",ticker=\"%s\",trade_id=\"%s\",market=\"%s\"} %s\n",$2,$3,$1,$5,$4
+	}'
