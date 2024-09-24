@@ -419,6 +419,7 @@ function lineGraph(data,title)
 		]
 		},
 		options: {
+			transitions: { resize: { animation: { duration: 400 } } },
 			maintainAspectRatio: true,
 			responsive: true,
 			title: {
@@ -478,6 +479,8 @@ function pieChart(my)
 		  }]
 		},
 		options: {
+			transitions: { resize: { animation: { duration: 400 } } },
+			animation: { animateScale: true, animateRotate: true },
 			plugins: {
 				legend: {
 					display: true,
